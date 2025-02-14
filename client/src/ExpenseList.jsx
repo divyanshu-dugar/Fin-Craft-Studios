@@ -11,7 +11,6 @@ function ExpenseList(){
     useEffect(()=>{
         axios.get("http://localhost:8080/expense-list")
         .then(response => {
-            console.log(response.data);
             setExpenseList(response.data)
     })
         .catch(error => console.log(error))
