@@ -41,7 +41,7 @@ app.post("/add-expense", (req, res) => {
     expense.save()
         .then(() => {
             console.log("Expense Created");
-            res.status(201);
+            res.status(201).json({ message: "Expense Created Successfully" });
         })
         .catch((err) => {
             console.log("Error creating expense", err);
