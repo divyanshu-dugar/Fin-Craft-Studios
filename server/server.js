@@ -16,9 +16,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
 const expenseSchema = new mongoose.Schema({
-    date: {type: Date},
-    category: {type: String},
-    amount: {type: Number},
+    date: {type: Date, required: true},
+    category: {type: String, required: true},
+    amount: {type: Number, required: true},
     note: {type: String}
 })
 
