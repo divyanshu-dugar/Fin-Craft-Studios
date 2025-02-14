@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./expense.css";
 
 function ExpenseList(){
+    let navigate = useNavigate();
+    
     let [expenseList, setExpenseList] = useState([]);
 
     useEffect(()=>{
@@ -41,6 +44,8 @@ function ExpenseList(){
                     
                     </tbody>
                 </table>
+
+                <button onClick={() => navigate('/add-expense')}>Add Expense</button>
         </>
     )
 }
