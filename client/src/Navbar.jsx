@@ -4,7 +4,7 @@ import "./navbar.css";
 function Navbar() {
   return (
     <nav className="navbar">
-      <div className="navbar-logo">💸 Ledgerify - Expense Tracker</div>
+      <div className="navbar-logo"><Link className="navbar-logo" to="/">💸 Ledgerify - Expense Tracker</Link></div>
       <ul className="navbar-links">
         <li>
           <Link to="/">Home</Link>
