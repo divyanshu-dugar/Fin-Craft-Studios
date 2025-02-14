@@ -34,6 +34,16 @@ app.get("/expense-list", (req, res) => {
     .catch((err) => res.json(err));
 })
 
+app.get("/edit-expense/:id", (req, res) => {
+    let {id} = req.params;
+    
+    Expense.findById(id)
+    .then((expense) => {
+        res.json(expense);
+    })
+    .catch((err) => res.json(err));
+})
+
 app.post("/add-expense", (req, res) => {
     let { date, category, amount, note } = req.body;
 
@@ -48,6 +58,16 @@ app.post("/add-expense", (req, res) => {
             res.status(500).json({ error: "Failed to create expense" });
         });
 });
+
+app.patch("/edit-expense", (req, res) => {
+    let {_id, date, category, amount, note} = req.body;
+
+    Expense.updateOne({_id: _id},
+        {$set: {_id, date, category, amount, note}}
+    )
+    .then(() => res.status(201).json("Expense Updated"))
+    .catch((err) => res.status(500).json({error: "Failed to update"}));
+})
 
 mongoose.connect("mongodb+srv://divyanshudugar0508:sAF1pzNtLnwSJ0vL@web-development.1nggs.mongodb.net/user-data?retryWrites=true&w=majority&appName=web-development", {
     useNewUrlParser: true,
