@@ -38,6 +38,7 @@ function ExpenseList(){
                                 <td>{ele.category}</td>
                                 <td>{ele.amount}</td>
                                 <td>{ele.note}</td>
+                                <td><button onClick={() => navigate(`/edit-expense/${ele._id}`)}>Edit</button></td>
                             </tr>
                         ))
                     }
