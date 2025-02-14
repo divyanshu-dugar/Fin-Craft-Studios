@@ -59,3 +59,5 @@ mongoose.connect("mongodb+srv://divyanshudugar0508:sAF1pzNtLnwSJ0vL@web-developm
 app.listen(PORT, ()=>{
     console.log(`Server is running on port ${PORT}`);
 })
+
+module.exports = app; // vercel
