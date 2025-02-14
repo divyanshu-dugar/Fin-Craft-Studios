@@ -11,7 +11,7 @@ function App() {
       <Navbar/>
         <Routes>
           <Route path='/' element={<ExpenseList/>}/>
-          <Route path="/expense" element={<Expense />} />
+          <Route path="/add-expense" element={<Expense />} />
           <Route path="/expense-list" element={<ExpenseList/>} />
           {/* 404 Page */}
           <Route path="*" element={<h1>Page Not Found</h1>} />
