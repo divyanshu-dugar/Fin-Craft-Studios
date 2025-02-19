@@ -15,6 +15,9 @@ function Navbar() {
         <li>
           <Link to="/expense-list">Expense List</Link>
         </li>
+        <li>
+          <Link to="/add-category">Add Category</Link>
+        </li>
       </ul>
     </nav>
   );
