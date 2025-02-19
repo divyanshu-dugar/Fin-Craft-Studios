@@ -22,7 +22,12 @@ const expenseSchema = new mongoose.Schema({
     note: {type: String}
 })
 
+const categorySchema = new mongoose.Schema({
+    name: {type: String, required: true}
+})
+
 const Expense = mongoose.model("Expense", expenseSchema);
+const Category = mongoose.model("Category", categorySchema);
 
 app.get("/expense-list", (req, res) => {
     let expenseList = Expense.find({});
@@ -32,6 +37,18 @@ app.get("/expense-list", (req, res) => {
         res.json(expenseList);
     })
     .catch((err) => res.json(err));
+})
+
+app.get("/category-list", (req, res) => {
+    let categoryList = Category.find({});
+
+    categoryList
+    .then((categoryList) => {
+        res.json(categoryList);
+    })
+    .catch((err) => {
+        res.json(err);
+    })
 })
 
 app.get("/edit-expense/:id", (req, res) => {
@@ -59,6 +76,21 @@ app.post("/add-expense", (req, res) => {
         });
 });
 
+app.post("/add-category", (req, res) => {
+    let {name} = req.body;
+
+    let category = new Category({name: name});
+    category.save()
+    .then(() => {
+        console.log("Category Created");
+        res.status(201).json({ message: "Category Created Successfully" });
+        })
+        .catch((err) => {
+            console.log("Error creating category", err);
+            res.status(500).json({ error: "Failed to create category" });
+        });
+})
+
 app.patch("/edit-expense", (req, res) => {
     let {_id, date, category, amount, note} = req.body;
 
@@ -67,6 +99,14 @@ app.patch("/edit-expense", (req, res) => {
     )
     .then(() => res.status(201).json("Expense Updated"))
     .catch((err) => res.status(500).json({error: "Failed to update"}));
+})
+
+app.delete("/delete-expense/:id", (req, res) => {
+    let {id} = req.params; 
+
+    Expense.deleteOne({_id: id})
+    .then(() => res.status(200).json("Expense Deleted"))
+    .catch((err) => res.status(500).json({error: "Failed to delete"}));
 })
 
 mongoose.connect("mongodb+srv://divyanshudugar0508:sAF1pzNtLnwSJ0vL@web-development.1nggs.mongodb.net/user-data?retryWrites=true&w=majority&appName=web-development", {
