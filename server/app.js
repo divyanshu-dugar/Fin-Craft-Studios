@@ -8,7 +8,7 @@ const categoryRoutes = require('./routes/categoryRoutes');
 const app = express();
 
 // Middleware
-app.use(cors({ origin: ['http://localhost:5173', 'https://ledgerify-i3e2agsuk-divyanshu-dugars-projects.vercel.app/'] }));
+app.use(cors({ origin: ['http://localhost:5173', 'https://ledgerify-client.vercel.app/'] }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
