@@ -2,15 +2,25 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Pie } from "react-chartjs-2";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { Bar } from "react-chartjs-2";
+import { Chart as ChartJS, 
+  ArcElement, 
+  Tooltip, 
+  Legend, 
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title
+} from "chart.js";
 import "./expense.css";
 
-ChartJS.register(ArcElement, Tooltip, Legend);
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 function ExpenseList() {
   let navigate = useNavigate();
   let [expenseList, setExpenseList] = useState([]);
   let [chartData, setChartData] = useState(null);
+  let [barData, setBarData] = useState(null);
   let [categories, setCategories] = useState([]);
 
   useEffect(() => {
@@ -30,10 +40,19 @@ function ExpenseList() {
         totals[category] = (totals[category] ?? 0) + amount;
         return totals;
       }, {});
+
+      const categoryFrequency = expenseList.reduce((freq, {category}) => {
+        freq[category] = (freq[category] ?? 0) + 1;
+        return freq;
+      }, {});
   
       const labels = Object.keys(categoryTotals).map(
         (categoryId) => categories.find((cat) => cat._id === categoryId)?.name || "Unknown"
       );
+
+      const barLabels = Object.keys(categoryFrequency).map((cat_id) => (
+        categories.find((c) => cat_id === c._id).name
+      ))
   
       setChartData({
         labels: labels,
@@ -46,6 +65,18 @@ function ExpenseList() {
           },
         ],
       });
+
+      setBarData({
+        labels: barLabels,
+        datasets: [
+          {
+            label: "Expense by Frequency",
+            data: Object.values(categoryFrequency),
+            backgroundColor: ["#d4af37", "#ff6384", "#36a2eb", "#ffce56", "#4caf50", "#ab47bc"],
+            hoverOffset: 8,
+          }
+        ]
+      })
     }
   }, [expenseList, categories]);
 
@@ -59,10 +90,15 @@ function ExpenseList() {
     <>
       <h1>Expense List</h1>
 
-      {chartData && (
-        <div style={{ width: "400px", margin: "0 auto", marginBottom: "20px" }}>
-          <Pie data={chartData} />
-        </div>
+      {chartData && barData && (
+        <div style={{ display: "flex", justifyContent: "space-evenly", gap: "20px", width: "100%", maxWidth: "600px", margin: "0 auto 20px auto" }}>
+          <div style={{ flex: 1 }}>
+            <Pie data={chartData} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <Bar data={barData} />
+          </div>
+        </div>      
       )}
 
       <table className="table">
