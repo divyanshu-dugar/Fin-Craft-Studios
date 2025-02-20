@@ -9,7 +9,7 @@ function Expense() {
     let [category, setCategory] = useState([{_id: "", category: ""}])
 
     useEffect(() => {
-        axios.get("http://localhost:8080/category-list")
+        axios.get("http://localhost:8080/categories")
         .then(response => {
             setCategory(response.data)
         })
@@ -19,7 +19,7 @@ function Expense() {
     async function handleFormSubmit(event){
         event.preventDefault();
 
-        axios.post("http://localhost:8080/add-expense", expense)
+        axios.post("http://localhost:8080/expenses", expense)
         .then(() => {
             navigate('/expense-list');
         })

@@ -19,7 +19,7 @@ export default function EditExpense() {
   // Fetch expense and categories
   useEffect(() => {
     axios
-      .get(`http://localhost:8080/edit-expense/${id}`)
+      .get(`http://localhost:8080/expenses/${id}`)
       .then((response) => {
         setExpense({
           _id: response.data._id,
@@ -32,7 +32,7 @@ export default function EditExpense() {
       .catch((err) => console.log(err));
 
     axios
-      .get("http://localhost:8080/category-list")
+      .get("http://localhost:8080/categories")
       .then((response) => setCategories(response.data))
       .catch((err) => console.log(err));
   }, [id]);
@@ -50,7 +50,7 @@ export default function EditExpense() {
     event.preventDefault();
 
     axios
-      .patch("http://localhost:8080/edit-expense", expense)
+      .patch("http://localhost:8080/expenses", expense)
       .then(() => navigate("/expense-list"))
       .catch((error) => console.log(error));
   }

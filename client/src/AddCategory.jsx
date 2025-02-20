@@ -15,7 +15,7 @@ export default function AddCategory(){
     function handleFormSubmit(event){
         event.preventDefault();
 
-        axios.post("http://localhost:8080/add-category", category)
+        axios.post("http://localhost:8080/categories", category)
         .then(() => {navigate("/expense-list")})
         .catch((error) => {console.log(error)})
     }

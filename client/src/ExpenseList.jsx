@@ -14,11 +14,11 @@ function ExpenseList() {
   let [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    axios.get("http://localhost:8080/expense-list")
+    axios.get("http://localhost:8080/expenses")
       .then(response => setExpenseList(response.data))
       .catch(error => console.log(error));
   
-    axios.get("http://localhost:8080/category-list")
+    axios.get("http://localhost:8080/categories")
       .then(response => setCategories(response.data))
       .catch(error => console.log(error));
   }, []);
@@ -50,7 +50,7 @@ function ExpenseList() {
   }, [expenseList, categories]);
 
   function handleDelete(id) {
-    axios.delete(`http://localhost:8080/delete-expense/${id}`)
+    axios.delete(`http://localhost:8080/expenses/${id}`)
       .then(() => setExpenseList((prevList) => prevList.filter((item) => item._id !== id)))
       .catch(err => console.log(err));
   }
