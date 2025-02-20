@@ -19,9 +19,9 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 function ExpenseList() {
   let navigate = useNavigate();
   let [expenseList, setExpenseList] = useState([]);
+  let [categories, setCategories] = useState([]);
   let [chartData, setChartData] = useState(null);
   let [barData, setBarData] = useState(null);
-  let [categories, setCategories] = useState([]);
 
   useEffect(() => {
     axios.get("http://localhost:8080/expenses")
@@ -51,7 +51,7 @@ function ExpenseList() {
       );
 
       const barLabels = Object.keys(categoryFrequency).map((cat_id) => (
-        categories.find((c) => cat_id === c._id).name
+        categories.find((c) => cat_id === c._id)?.name || "Unknown"
       ))
   
       setChartData({
@@ -115,7 +115,7 @@ function ExpenseList() {
           {expenseList.map((ele) => (
             <tr key={ele._id}>
               <td>{new Date(ele.date).toLocaleDateString()}</td>
-              <td>{categories.find((cat) => cat._id === ele.category).name}</td>
+              <td>{categories.find((cat) => cat._id === ele.category)?.name || "Unknown"}</td>
               <td>{ele.amount}</td>
               <td>{ele.note}</td>
               <td>
