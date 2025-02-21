@@ -5,7 +5,7 @@ import "./expense.css"
 
 function Expense() {
     let navigate = useNavigate();
-    let [expense, setExpense] = useState({ date: "", category: "", amount: 0, note: "" });
+    let [expense, setExpense] = useState({ date: "", category: "", amount: "", note: "" });
     let [category, setCategory] = useState([{_id: "", category: ""}])
 
     useEffect(() => {
@@ -43,8 +43,8 @@ function Expense() {
                             <option key={c._id} value={c._id}>{c.name}</option>
                         ))}
                     </select>
-                    <input type="number" name="amount" id="amount" value={expense.amount} onChange={handleChange} />
-                    <input type="text" name="note" id="note" value={expense.note} onChange={handleChange} />
+                    <input type="number" name="amount" id="amount" value={expense.amount} onChange={handleChange} placeholder="Add Amount"/>
+                    <input type="text" name="note" id="note" value={expense.note} onChange={handleChange} placeholder="Add Note" />
                     <button>Add Expense</button>
                 </form>
             </div>
