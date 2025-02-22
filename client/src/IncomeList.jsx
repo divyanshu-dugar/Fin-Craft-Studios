@@ -1,11 +1,22 @@
 import { useNavigate } from "react-router-dom"
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 
 export default function IncomeList(){
     const navigate = useNavigate();
 
-    let [incomeList, setIncomeList] = useState([{}]);
-    let [categories, setCategories] = useState([{}]);
+    let [incomeList, setIncomeList] = useState([]);
+    let [categories, setCategories] = useState([]);
+
+    useEffect(() => {
+        axios.get("http://localhost:8080/income")
+          .then(response => setIncomeList(response.data))
+          .catch(error => console.log(error));
+      
+        axios.get("http://localhost:8080/income-categories")
+          .then(response => setCategories(response.data))
+          .catch(error => console.log(error));
+      }, []);
 
     function handleDelete(){
 
