@@ -15,7 +15,7 @@ function Navbar() {
           <Link to="/income-list">Income Tracker</Link>
           <ul>
             <li><Link to="/add-income">Add Income</Link></li>
-            <li><Link to="/add-category">Add Category</Link></li>
+            <li><Link to="/add-income-category">Add Category</Link></li>
           </ul>
         </li>
         <li>
