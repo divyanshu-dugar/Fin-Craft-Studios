@@ -13,6 +13,7 @@ import { Chart as ChartJS,
   Title
 } from "chart.js";
 import "./expense.css";
+import {sortData} from './Utils/helper';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
@@ -25,7 +26,7 @@ function ExpenseList() {
 
   useEffect(() => {
     axios.get("http://localhost:8080/expenses")
-      .then(response => setExpenseList(response.data))
+      .then(response => setExpenseList(sortData(response.data)))
       .catch(error => console.log(error));
   
     axios.get("http://localhost:8080/categories")
