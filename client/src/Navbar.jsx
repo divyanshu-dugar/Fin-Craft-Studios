@@ -34,6 +34,9 @@ function Navbar() {
         <li>
           <Link to="/tax-calculator">Tax Calculator</Link>
         </li>
+        <li>
+          <Link to="/currency-converter">Currency Converter</Link>
+        </li>
       </ul>
     </nav>
   );

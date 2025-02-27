@@ -1,5 +1,5 @@
 import { useState } from "react";
-import "./expense.css"; // Import the CSS file
+import "./expense.css";
 
 function TaxCalculator() {
     let [taxData, setTaxData] = useState({ income: "", taxRate: "", taxAmount: "" });
