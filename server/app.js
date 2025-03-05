@@ -6,6 +6,7 @@ const expenseRoutes = require('./routes/expenseRoutes');
 const incomeRoutes = require('./routes/incomeRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const incomeCategoryRoutes = require('./routes/incomeCategoryRoutes');
+const savingsGoalListRoutes = require('./routes/savingsGoalListRoutes');
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use('/expenses', expenseRoutes);
 app.use('/income', incomeRoutes);
 app.use('/categories', categoryRoutes);
-app.use('/income-categories', incomeCategoryRoutes)
+app.use('/income-categories', incomeCategoryRoutes);
+app.use('/saving-goals', savingsGoalListRoutes);
 
 module.exports = app;
