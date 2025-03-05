@@ -31,6 +31,12 @@ function Navbar() {
             <li><Link to="/add-savings-goal">Add Savings Goal</Link></li>
           </ul>
         </li>
+        <li>
+          <Link to="/tax-calculator">Tax Calculator</Link>
+        </li>
+        <li>
+          <Link to="/currency-converter">Currency Converter</Link>
+        </li>
       </ul>
     </nav>
   );

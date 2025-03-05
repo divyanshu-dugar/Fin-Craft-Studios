@@ -1,0 +1,63 @@
+.currency-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #1a1a1a;
+    padding: 25px;
+    border-radius: 15px;
+    width: 350px;
+    margin: 20px auto;
+    box-shadow: 0 6px 15px rgba(255, 204, 0, 0.3);
+}
+
+.currency-container h2 {
+    color: #ffcc00;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.currency-container input, .currency-container select {
+    width: 100%;
+    margin: 10px 0;
+    padding: 12px;
+    border-radius: 8px;
+    border: 2px solid #ffcc00;
+    background-color: black;
+    color: white;
+    font-size: 16px;
+    text-align: center;
+    transition: 0.3s ease-in-out;
+}
+
+.currency-container input:focus, .currency-container select:focus {
+    outline: none;
+    border-color: #ffaa00;
+    box-shadow: 0 0 10px rgba(255, 204, 0, 0.6);
+}
+
+.currency-container button {
+    background-color: #ffcc00;
+    color: black;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: 0.3s ease-in-out;
+}
+
+.currency-container button:hover {
+    background-color: #ffaa00;
+    transform: scale(1.05);
+}
+
+.currency-container h3 {
+    color: #ffcc00;
+    margin-top: 15px;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 2px 8px rgba(255, 204, 0, 0.5);
+}

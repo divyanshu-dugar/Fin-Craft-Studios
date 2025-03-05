@@ -7,6 +7,8 @@ import AddCategory from './AddCategory';
 import IncomeList from './IncomeList';
 import AddIncome from './AddIncome';
 import AddIncomeCategory from './AddIncomeCategory'
+import TaxCalculator from './TaxCalculator';
+import CurrencyConverter from "./CurrencyConverter";
 
 function App() {
 
@@ -23,6 +25,8 @@ function App() {
           <Route path="/income-list" element={<IncomeList/>} />
           <Route path="/add-income" element={<AddIncome />} />
           <Route path="/add-income-category" element={<AddIncomeCategory />} />
+          <Route path="/tax-calculator" element={<TaxCalculator />} />
+          <Route path="/currency-converter" element={<CurrencyConverter />} />
           {/* 404 Page */}
           <Route path="*" element={<h1>Page Not Found</h1>} />
         </Routes>
