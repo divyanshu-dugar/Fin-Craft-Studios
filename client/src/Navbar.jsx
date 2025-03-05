@@ -14,6 +14,7 @@ function Navbar() {
         <li>
           <Link to="/income-list">Income Tracker</Link>
           <ul>
+            <li><Link to="/income-list">Income List</Link></li>
             <li><Link to="/add-income">Add Income</Link></li>
             <li><Link to="/add-income-category">Add Category</Link></li>
           </ul>
@@ -21,6 +22,7 @@ function Navbar() {
         <li>
           <Link to="/expense-list">Expense Tracker</Link>
           <ul>
+            <li><Link to="/expense-list">Expense List</Link></li>
             <li><Link to="/add-expense">Add Expense</Link></li>
             <li><Link to="/add-category">Add Category</Link></li>
           </ul>
@@ -28,6 +30,7 @@ function Navbar() {
         <li>
           <Link to="/savings-goal-list">Savings Goal Tracker</Link>
           <ul>
+            <li><Link to="/savings-goal-list">Savings Goal List</Link></li>
             <li><Link to="/add-savings-goal">Add Savings Goal</Link></li>
           </ul>
         </li>
