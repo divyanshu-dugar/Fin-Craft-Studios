@@ -20,10 +20,7 @@ export default function IncomeList(){
 
     function handleDelete(id){
         axios.delete(`http://localhost:8080/income/${id}`)
-        .then(response => setIncomeList(() => {
-            incomeList = response.data;
-            console.log("Income Deleted Succesfully");
-        }))
+        .then(() => setIncomeList((prevList) => prevList.filter((income) => income._id != id)))
         .catch(err => console.log(err));
     }
 
@@ -49,7 +46,7 @@ export default function IncomeList(){
                 <td>{ele.amount}</td>
                 <td>{ele.note}</td>
                 <td>
-                    <button onClick={() => navigate(`/edit-expense/${ele._id}`)}>Edit</button>
+                    <button onClick={() => navigate(`/edit-income/${ele._id}`)}>Edit</button>
                     <button onClick={() => handleDelete(ele._id)}>Delete</button>
                 </td>
                 </tr>
