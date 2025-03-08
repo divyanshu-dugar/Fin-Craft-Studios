@@ -18,8 +18,13 @@ export default function IncomeList(){
           .catch(error => console.log(error));
       }, []);
 
-    function handleDelete(){
-
+    function handleDelete(id){
+        axios.delete(`http://localhost:8080/income/${id}`)
+        .then(response => setIncomeList(() => {
+            incomeList = response.data;
+            console.log("Income Deleted Succesfully");
+        }))
+        .catch(err => console.log(err));
     }
 
     return (
