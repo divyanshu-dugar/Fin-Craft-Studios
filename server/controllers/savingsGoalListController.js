@@ -1,4 +1,4 @@
-import SavingsGoalList from "../models/SavingsGoalList"
+const SavingsGoalList = require("../models/SavingsGoalList")
 
 const getSavingGoals = async(req, res) => {
     try{
