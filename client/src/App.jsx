@@ -3,6 +3,7 @@ import Navbar from "./Navbar"
 import AddExpense from "./AddExpense"
 import ExpenseList from "./ExpenseList"
 import EditExpense from './EditExpense';
+import EditIncome from  './EditIncome';
 import AddCategory from './AddCategory';
 import IncomeList from './IncomeList';
 import AddIncome from './AddIncome';
@@ -23,6 +24,7 @@ function App() {
           <Route path="/add-category" element={<AddCategory/>} />
           <Route path="/expense-list" element={<ExpenseList/>} />
           <Route path="/edit-expense/:id" element={<EditExpense/>} />
+          <Route path="/edit-income/:id" element={<EditIncome/>} />
           <Route path="/income-list" element={<IncomeList/>} />
           <Route path="/add-income" element={<AddIncome />} />
           <Route path="/add-income-category" element={<AddIncomeCategory />} />
