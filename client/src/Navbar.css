@@ -31,37 +31,64 @@
   position: relative;
 }
 
-.navbar-links li a {
+.navbar-links li > a,
+.navbar-links li > span {
   text-decoration: none;
   color: white;
   font-size: 16px;
   font-weight: 500;
   transition: color 0.3s ease, transform 0.3s ease;
-  position: relative;
   padding: 8px 12px;
   display: block;
+  cursor: pointer;
 }
 
-.navbar-links li a:hover {
+.navbar-links li > a:hover,
+.navbar-links li > span:hover {
   color: #d4af37;
   transform: scale(1.05);
 }
 
-/* Dropdown Menu */
-.navbar-links li ul {
+/* Dropdown Styles */
+.dropdown {
   display: none;
   position: absolute;
   top: 100%;
   left: 0;
   background-color: #1a1a1a;
-  padding: 0;
   list-style: none;
-  width: 180px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  min-width: 200px;
   border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  padding: 0;
 }
 
-.navbar-links li ul a {
+.dropdown li {
+  position: relative;
+}
+
+/* Submenu Styles (for Income/Expense under Ledgerify) */
+.submenu {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 100%;
+  background-color: #2a2a2a;
+  list-style: none;
+  min-width: 200px;
+  border-radius: 4px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  padding: 0;
+}
+
+.dropdown li:hover .submenu {
+  display: block;
+}
+
+.dropdown li > a,
+.dropdown li > span {
   color: white;
   padding: 10px 16px;
   display: block;
@@ -69,12 +96,18 @@
   transition: background 0.3s ease;
 }
 
-.navbar-links li ul a:hover {
+.dropdown li > a:hover,
+.dropdown li > span:hover {
   background-color: #333;
   color: #d4af37;
 }
 
 /* Show dropdown on hover */
-.navbar-links li:hover ul {
+.navbar-links li:hover > .dropdown {
   display: block;
+}
+
+.navbar-links li:last-child .dropdown {
+  left: auto;
+  right: 0;
 }
