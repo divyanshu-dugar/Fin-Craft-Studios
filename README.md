@@ -1,4 +1,4 @@
-# Welcome to Lederify
+# Welcome to Fin-Craft Studios
 
 ## RESTful API's in the application
 | **Action**            | **Endpoint**        | **Method** | **Description (CRUD Operation)**                                   |
