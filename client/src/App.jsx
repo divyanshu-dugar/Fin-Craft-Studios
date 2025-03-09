@@ -11,6 +11,7 @@ import AddIncomeCategory from './AddIncomeCategory'
 import SavingsGoalList from './SavingsGoalList'
 import TaxCalculator from './TaxCalculator';
 import CurrencyConverter from "./CurrencyConverter";
+import HomePage from './HomePage';
 
 function App() {
 
@@ -19,7 +20,7 @@ function App() {
       <Router>
       <Navbar/>
         <Routes>
-          <Route path='/' element={<ExpenseList/>}/>
+          <Route path='/' element={<HomePage/>}/>
           <Route path="/add-expense" element={<AddExpense />} />
           <Route path="/add-category" element={<AddCategory/>} />
           <Route path="/expense-list" element={<ExpenseList/>} />
