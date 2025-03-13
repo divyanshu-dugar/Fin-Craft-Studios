@@ -13,7 +13,7 @@ export default function SavingsGoalList(){
     return(
         <>
             <h1>Savings Goal List</h1>
-            {savingsGoalList.map((goal) => {
+            {/* {savingsGoalList.map((goal) => {
             <div>
                 <h3>Goal: {goal.name}</h3>
                 <p>Amount: {goal.amount}</p>
@@ -21,7 +21,7 @@ export default function SavingsGoalList(){
                 <p>Priority Level</p>
                 <p>Category</p>
             </div>
-            })}
+            })} */}
         </>
     )
 }
