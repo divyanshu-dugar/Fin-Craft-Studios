@@ -41,14 +41,50 @@ const Home = () => {
 
       {/* Developer Section */}
       <section className="home-developers">
-        <h2>🔧 For Developers</h2>
-        <p>
-          This platform is built using <strong>React.js</strong>, <strong>React Router</strong>, and styled with clean, modular CSS.
-        </p>
-        <p>
-          Our goal is to promote open-source collaboration and empower the dev community to contribute!
-        </p>
+        <h2>🔧 Tech Stack Overview</h2>
+        <p>This platform is built with a powerful full-stack architecture designed for performance and scalability.</p>
+
+        <div className="tech-stack-grid">
+          <div className="tech-column">
+            <h3>🖥 Frontend</h3>
+            <ul>
+              <li><strong>React.js</strong> - Component-based UI library</li>
+              <li><strong>Vite</strong> - Lightning-fast frontend tooling</li>
+              <li><strong>React Router</strong> - Routing system for navigation</li>
+              <li><strong>Tailwind CSS</strong> - Utility-first styling framework</li>
+              <li><strong>DaisyUI</strong> - Pre-styled Tailwind components</li>
+              <li><strong>Chart.js</strong> & <strong>react-chartjs-2</strong> - Interactive data visualizations</li>
+            </ul>
+          </div>
+
+          <div className="tech-column">
+            <h3>🗄 Backend</h3>
+            <ul>
+              <li><strong>Node.js</strong> - JavaScript runtime environment</li>
+              <li><strong>Express.js</strong> - Fast and minimalist web framework</li>
+              <li><strong>CORS</strong> & <strong>Body-Parser</strong> - Middleware for APIs</li>
+              <li><strong>Mongoose</strong> - ODM for MongoDB</li>
+            </ul>
+          </div>
+
+          <div className="tech-column">
+            <h3>💾 Database</h3>
+            <ul>
+              <li><strong>MongoDB</strong> - NoSQL database</li>
+            </ul>
+          </div>
+
+          <div className="tech-column">
+            <h3>⚙️ Tooling</h3>
+            <ul>
+              <li><strong>ESLint</strong> - Code quality & linting</li>
+              <li><strong>Vite Dev Server</strong> - Hot Module Replacement</li>
+              <li><strong>NPM Scripts</strong> - Build & deployment automation</li>
+            </ul>
+          </div>
+        </div>
       </section>
+
 
       {/* GitHub Section */}
       <section className="home-github">
