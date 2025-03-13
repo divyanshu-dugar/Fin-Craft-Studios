@@ -9,7 +9,7 @@ const Home = () => {
       <section className="home-hero">
         <h1>Welcome to 💸 Fin-Craft Studios</h1>
         <p>Your all-in-one financial companion for smarter money decisions.</p>
-        <Link className="home-cta-button" to="/ledgerify">Get Started</Link>
+        <Link className="home-cta-button" to="/expense-list">Get Started</Link>
       </section>
 
       {/* Tools Overview */}
@@ -32,6 +32,10 @@ const Home = () => {
             <h3>Investify</h3>
             <p>Learn to invest smartly and grow your wealth (Coming Soon!).</p>
           </div>
+          <div className="tool-card">
+            <h3>Other Tools</h3>
+            <p>Tax Calculator, Currency Converter, ...</p>
+          </div>
         </div>
       </section>
 
@@ -52,7 +56,7 @@ const Home = () => {
         <p>
           Check out our project on GitHub and feel free to fork, star, or contribute.
         </p>
-        <a href="https://github.com/your-github-repo-link" target="_blank" rel="noopener noreferrer" className="github-button">
+        <a href="https://github.com/divyanshu-dugar/Fin-Craft-Studios" target="_blank" rel="noopener noreferrer" className="github-button">
           View on GitHub
         </a>
       </section>
