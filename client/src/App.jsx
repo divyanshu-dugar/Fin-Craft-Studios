@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from "./Navbar"
 import AddExpense from "./AddExpense"
+import AddSavingsGoal from "./AddSavingsGoal";
 import ExpenseList from "./ExpenseList"
 import EditExpense from './EditExpense';
 import EditIncome from  './EditIncome';
@@ -23,6 +24,7 @@ function App() {
           <Route path='/' element={<HomePage/>}/>
           <Route path="/add-expense" element={<AddExpense />} />
           <Route path="/add-category" element={<AddCategory/>} />
+          <Route path="/add-savings-goal" element={<AddSavingsGoal />} />
           <Route path="/expense-list" element={<ExpenseList/>} />
           <Route path="/edit-expense/:id" element={<EditExpense/>} />
           <Route path="/edit-income/:id" element={<EditIncome/>} />
