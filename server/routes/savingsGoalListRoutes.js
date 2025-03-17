@@ -1,8 +1,16 @@
 const express = require("express");
-const {getSavingGoals} = require("../controllers/savingsGoalListController");
+const {
+  getSavingGoals,
+  addSavingGoal,
+  deleteSavingGoal,
+  updateSavingGoal,
+} = require("../controllers/savingsGoalListController");
 
 const router = express.Router();
 
-router.get("/", getSavingGoals);
+router.get("/", getSavingGoals);                 // GET all savings goals
+router.post("/", addSavingGoal);                 // POST add a new goal
+router.delete("/:id", deleteSavingGoal);         // DELETE goal by ID
+router.put("/:id", updateSavingGoal);            // PUT update goal by ID
 
 module.exports = router;
