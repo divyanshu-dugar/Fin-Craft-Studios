@@ -16,11 +16,11 @@ function ExpenseList() {
   let [barData, setBarData] = useState(null);
 
   useEffect(() => {
-    axios.get("http://localhost:8080/expenses")
+    axios.get("https://ledgerify-server.vercel.app/expenses")
       .then(response => setExpenseList(sortData(response.data)))
       .catch(error => console.log(error));
 
-    axios.get("http://localhost:8080/categories")
+    axios.get("https://ledgerify-server.vercel.app/categories")
       .then(response => setCategories(response.data))
       .catch(error => console.log(error));
   }, []);
