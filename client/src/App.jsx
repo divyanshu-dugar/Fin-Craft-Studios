@@ -1,17 +1,20 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from "./Navbar"
-import AddExpense from "./AddExpense"
-import AddSavingsGoal from "./AddSavingsGoal";
-import ExpenseList from "./ExpenseList"
-import EditExpense from './EditExpense';
-import EditIncome from  './EditIncome';
-import AddCategory from './AddCategory';
-import IncomeList from './IncomeList';
-import AddIncome from './AddIncome';
-import AddIncomeCategory from './AddIncomeCategory'
-import SavingsGoalList from './SavingsGoalList'
+import AddExpense from "./ExpenseComponents/AddExpense"
+import ExpenseList from "./ExpenseComponents/ExpenseList"
+import EditExpense from './ExpenseComponents/EditExpense';
+import EditIncome from  './IncomeComponents/EditIncome';
+import AddCategory from './ExpenseComponents/AddCategory';
+
+import IncomeList from './IncomeComponents/IncomeList';
+import AddIncome from './IncomeComponents/AddIncome';
+import AddIncomeCategory from './IncomeComponents/AddIncomeCategory'
+
+import AddSavingsGoal from "./SavingComponents/AddSavingsGoal";
+import SavingsGoalList from './SavingComponents/SavingsGoalList'
 import TaxCalculator from './TaxCalculator';
 import CurrencyConverter from "./CurrencyConverter";
+
 import HomePage from './HomePage';
 
 function App() {

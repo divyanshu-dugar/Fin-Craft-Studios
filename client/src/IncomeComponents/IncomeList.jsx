@@ -10,19 +10,19 @@ export default function IncomeList() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:8080/income")
+      .get("https://ledgerify-server.vercel.app/income")
       .then((response) => setIncomeList(response.data))
       .catch((error) => console.log(error));
 
     axios
-      .get("http://localhost:8080/income-categories")
+      .get("https://ledgerify-server.vercel.app/income-categories")
       .then((response) => setCategories(response.data))
       .catch((error) => console.log(error));
   }, []);
 
   function handleDelete(id) {
     axios
-      .delete(`http://localhost:8080/income/${id}`)
+      .delete(`https://ledgerify-server.vercel.app/income/${id}`)
       .then(() =>
         setIncomeList((prevList) =>
           prevList.filter((income) => income._id != id)

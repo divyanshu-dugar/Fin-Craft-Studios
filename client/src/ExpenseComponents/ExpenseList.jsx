@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Pie, Bar } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from "chart.js";
-import "./expense.css";
-import { sortData } from "./Utils/helper";
+import "../main.css";
+import { sortData } from "../Utils/helper";
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
@@ -72,7 +72,7 @@ function ExpenseList() {
   }, [expenseList, categories]);
 
   function handleDelete(id) {
-    axios.delete(`http://localhost:8080/expenses/${id}`)
+    axios.delete(`https://ledgerify-server.vercel.app/expenses/${id}`)
       .then(() => setExpenseList((prevList) => prevList.filter((item) => item._id !== id)))
       .catch(err => console.log(err));
   }

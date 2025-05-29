@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import "./SavingsGoalList.css"; 
+import "../SavingsGoalList.css"; 
 
 export default function SavingsGoalList() {
   const [savingsGoalList, setSavingsGoalList] = useState([{}]);
