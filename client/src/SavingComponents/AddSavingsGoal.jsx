@@ -24,7 +24,7 @@ function SavingsGoal() {
     event.preventDefault();
 
     try {
-      await axios.post("http://localhost:8080/saving-goals", savingsGoal);
+      await axios.post("https://ledgerify-client.vercel.app/saving-goals", savingsGoal);
       navigate("/savings-goal-list");
     } catch (error) {
       console.error("Error saving goal:", error);
