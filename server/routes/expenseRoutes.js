@@ -10,16 +10,16 @@ const {
     getExpensesByDateRange,
     getExpenseStats
 } = require('../controllers/expenseController');
-const authenticate = require('../middleware/auth');
+const passport = require("passport")
 
 // All routes are protected
-router.get('/', authenticate, getExpenses);
-router.get('/stats', authenticate, getExpenseStats);
-router.get('/category/:category', authenticate, getExpensesByCategory);
-router.get('/date-range', authenticate, getExpensesByDateRange);
-router.get('/:id', authenticate, getExpenseById);
-router.post('/', authenticate, addExpense);
-router.put('/:id', authenticate, editExpense);
-router.delete('/:id', authenticate, deleteExpense);
+router.get('/', passport.authenticate('jwt', { session: false }), getExpenses);
+router.get('/stats', passport.authenticate('jwt', { session: false }), getExpenseStats);
+router.get('/category/:category', passport.authenticate('jwt', { session: false }), getExpensesByCategory);
+router.get('/date-range', passport.authenticate('jwt', { session: false }), getExpensesByDateRange);
+router.get('/:id', passport.authenticate('jwt', { session: false }), getExpenseById);
+router.post('/', passport.authenticate('jwt', { session: false }), addExpense);
+router.put('/:id', passport.authenticate('jwt', { session: false }), editExpense);
+router.delete('/:id', passport.authenticate('jwt', { session: false }), deleteExpense);
 
 module.exports = router;
