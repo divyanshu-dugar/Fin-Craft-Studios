@@ -136,46 +136,50 @@ const getExpensesByDateRange = async (req, res) => {
 
 // Get expense statistics for logged-in user
 const getExpenseStats = async (req, res) => {
-    try {
-        const stats = await Expense.aggregate([
-            { 
-                $match: { 
-                    user: req.user._id 
-                } 
-            },
-            {
-                $group: {
-                    _id: '$category',
-                    totalAmount: { $sum: '$amount' },
-                    count: { $sum: 1 }
-                }
-            },
-            {
-                $sort: { totalAmount: -1 }
-            }
-        ]);
-        
-        const totalExpenses = await Expense.aggregate([
-            { 
-                $match: { 
-                    user: req.user._id 
-                } 
-            },
-            {
-                $group: {
-                    _id: null,
-                    total: { $sum: '$amount' }
-                }
-            }
-        ]);
-        
-        res.json({
-            categoryStats: stats,
-            totalExpenses: totalExpenses[0]?.total || 0
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+  try {
+    // Aggregate by category
+    const categoryStats = await Expense.aggregate([
+      {
+        $match: { user: req.user._id }
+      },
+      {
+        $group: {
+          _id: '$category',
+          totalAmount: { $sum: '$amount' },
+          count: { $sum: 1 }
+        }
+      },
+      {
+        $sort: { totalAmount: -1 }
+      }
+    ]);
+
+    // Compute total expenses and total transaction count
+    const totalStats = await Expense.aggregate([
+      {
+        $match: { user: req.user._id }
+      },
+      {
+        $group: {
+          _id: null,
+          totalExpenses: { $sum: '$amount' },
+          totalTransactions: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const totalExpenses = totalStats[0]?.totalExpenses || 0;
+    const totalTransactions = totalStats[0]?.totalTransactions || 0;
+
+    // Send response compatible with frontend
+    res.status(200).json({
+      categoryStats,
+      totalExpenses,
+      totalTransactions
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
 module.exports = { 
