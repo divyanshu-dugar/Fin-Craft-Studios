@@ -11,17 +11,7 @@ const savingsGoalListRoutes = require('./routes/savingsGoalListRoutes');
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://ledgerify-client.vercel.app',
-    'https://fincraft-studios.vercel.app'
-  ],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
-
+app.use(cors({ origin: ['http://localhost:3000', 'https://ledgerify-client.vercel.app', 'https://fincraft-studios.vercel.app'] }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
