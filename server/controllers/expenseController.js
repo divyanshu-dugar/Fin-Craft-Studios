@@ -167,9 +167,9 @@ const getExpenseStats = async (req, res) => {
     ]);
 
     // Safely extract data
-    const totalExpenses = totals[0]?.totalExpenses || 0;
-    const totalTransactions = totals[0]?.totalTransactions || 0;
-    const avgExpense = totalTransactions > 0 ? totalExpenses / totalTransactions : 0;
+    const totalExpenses = totals.totalExpenses;
+    const totalTransactions = totals.totalTransactions;
+    const avgExpense = totalExpenses / totalTransactions : 0;
 
     // 3️⃣ Send data to frontend
     res.json({
