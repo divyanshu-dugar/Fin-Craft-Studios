@@ -136,47 +136,47 @@ const getExpensesByDateRange = async (req, res) => {
 
 // Get expense statistics for logged-in user
 const getExpenseStats = async (req, res) => {
-    try {
-        const stats = await Expense.aggregate([
-            { 
-                $match: { 
-                    user: req.user._id 
-                } 
-            },
-            {
-                $group: {
-                    _id: '$category',
-                    totalAmount: { $sum: '$amount' },
-                    count: { $sum: 1 }
-                }
-            },
-            {
-                $sort: { totalAmount: -1 }
-            }
-        ]);
-        
-        const totalExpenses = await Expense.aggregate([
-            { 
-                $match: { 
-                    user: req.user._id 
-                } 
-            },
-            {
-                $group: {
-                    _id: null,
-                    total: { $sum: '$amount' }
-                }
-            }
-        ]);
-        
-        res.json({
-            categoryStats: stats,
-            totalExpenses: totalExpenses[0]?.total || 0
-        });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+  try {
+    // Match all expenses for the logged-in user
+    const matchStage = { $match: { user: req.user._id } };
+
+    // Group by category to get category-wise totals
+    const categoryStats = await Expense.aggregate([
+      matchStage,
+      {
+        $group: {
+          _id: '$category',
+          totalAmount: { $sum: '$amount' },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { totalAmount: -1 } },
+    ]);
+
+    // Total expenses
+    const total = await Expense.aggregate([
+      matchStage,
+      { $group: { _id: null, total: { $sum: '$amount' }, count: { $sum: 1 } } },
+    ]);
+
+    const totalExpenses = total[0]?.total || 0;
+    const totalTransactions = total[0]?.count || 0;
+
+    // (Optional) Populate category names if you’re storing category IDs
+    // Uncomment this if `category` is a ref to another model
+    // const populatedStats = await Expense.populate(categoryStats, { path: '_id', select: 'name' });
+
+    res.json({
+      categoryStats,           // list of categories with totals
+      totalExpenses,           // overall total
+      totalTransactions,       // total number of expense entries
+    });
+  } catch (err) {
+    console.error('Error getting expense stats:', err);
+    res.status(500).json({ error: err.message });
+  }
 };
+
 
 module.exports = { 
     getExpenses, 
