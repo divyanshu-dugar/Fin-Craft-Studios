@@ -1,4 +1,5 @@
 const Expense = require('../models/Expense');
+const mongoose = require('mongoose');
 
 // Get all expenses for logged-in user
 const getExpenses = async (req, res) => {
@@ -134,12 +135,16 @@ const getExpensesByDateRange = async (req, res) => {
     }
 };
 
-// Get expense statistics for logged-in user
-// Get expense statistics for logged-in user
 const getExpenseStats = async (req, res) => {
   try {
-    // Match all expenses for the logged-in user
-    const matchStage = { $match: { user: req.user._id } };
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ error: "Unauthorized access" });
+    }
+
+    // Converting user._id to ObjectId explicitly
+    const userId = new mongoose.Types.ObjectId(String(req.user._id));
+
+    const matchStage = { $match: { user: userId } };
 
     // 1️⃣ Category-wise totals
     const categoryStats = await Expense.aggregate([
@@ -154,7 +159,7 @@ const getExpenseStats = async (req, res) => {
       { $sort: { totalAmount: -1 } },
     ]);
 
-    // 2️⃣ Overall totals (sum and count)
+    // 2️⃣ Overall totals
     const totals = await Expense.aggregate([
       matchStage,
       {
@@ -166,13 +171,11 @@ const getExpenseStats = async (req, res) => {
       },
     ]);
 
-    // Safely extract data
-    const totalExpenses = totals.totalExpenses;
-    const totalTransactions = totals.totalTransactions;
-    const avgExpense = totalExpenses / totalTransactions;
+    const totalExpenses = totals.length > 0 ? totals[0].totalExpenses : 0;
+    const totalTransactions = totals.length > 0 ? totals[0].totalTransactions : 0;
+    const avgExpense = totalTransactions > 0 ? totalExpenses / totalTransactions : 0;
 
-    // 3️⃣ Send data to frontend
-    res.json({
+    res.status(200).json({
       categoryStats,
       totalExpenses,
       totalTransactions,
