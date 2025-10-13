@@ -221,6 +221,10 @@ const getExpensesByDateRange = async (req, res) => {
   }
 };
 
+const mongoose = require('mongoose');
+const Expense = require('../models/Expense');
+const ExpenseCategory = require('../models/ExpenseCategory');
+
 const getExpenseStats = async (req, res) => {
   try {
     if (!req.user || !req.user._id) {
@@ -229,7 +233,7 @@ const getExpenseStats = async (req, res) => {
 
     const userId = new mongoose.Types.ObjectId(req.user._id);
 
-    // Category-wise totals
+    // Aggregate stats per category (using ObjectId reference)
     const categoryStats = await Expense.aggregate([
       { $match: { user: userId } },
       {
@@ -242,12 +246,14 @@ const getExpenseStats = async (req, res) => {
       { $sort: { totalAmount: -1 } },
     ]);
 
-    // Fetch category details manually
+    // Populate category names and colors
     const populatedStats = await Promise.all(
       categoryStats.map(async (stat) => {
         const category = await ExpenseCategory.findById(stat._id);
         return {
-          category: category ? { _id: category._id, name: category.name, color: category.color } : null,
+          category: category
+            ? { _id: category._id, name: category.name, color: category.color }
+            : { _id: null, name: 'Unknown', color: '#9CA3AF' },
           totalAmount: stat.totalAmount,
           count: stat.count,
         };
@@ -282,6 +288,7 @@ const getExpenseStats = async (req, res) => {
   }
 };
 
+module.exports = getExpenseStats;
 
 module.exports = {
   getExpenses,
