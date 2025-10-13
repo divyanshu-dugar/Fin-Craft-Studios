@@ -221,14 +221,15 @@ const getExpensesByDateRange = async (req, res) => {
   }
 };
 
-// Get expense stats (category-wise totals)
 const getExpenseStats = async (req, res) => {
   try {
-    if (!req.user || !req.user._id) return res.status(401).json({ error: 'Unauthorized access' });
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ error: 'Unauthorized access' });
+    }
 
     const userId = new mongoose.Types.ObjectId(req.user._id);
 
-    // Category-wise totals (grouped by category ObjectId)
+    // Category-wise totals
     const categoryStats = await Expense.aggregate([
       { $match: { user: userId } },
       {
@@ -241,11 +242,17 @@ const getExpenseStats = async (req, res) => {
       { $sort: { totalAmount: -1 } },
     ]);
 
-    // Populate the category _id to get name/color
-    const populatedStats = await ExpenseCategory.populate(categoryStats, {
-      path: '_id',
-      select: 'name color icon',
-    });
+    // Fetch category details manually
+    const populatedStats = await Promise.all(
+      categoryStats.map(async (stat) => {
+        const category = await ExpenseCategory.findById(stat._id);
+        return {
+          category: category ? { _id: category._id, name: category.name, color: category.color } : null,
+          totalAmount: stat.totalAmount,
+          count: stat.count,
+        };
+      })
+    );
 
     // Overall totals
     const totals = await Expense.aggregate([
@@ -274,6 +281,7 @@ const getExpenseStats = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
 
 module.exports = {
   getExpenses,
