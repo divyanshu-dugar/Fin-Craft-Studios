@@ -3,6 +3,8 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 
 const expenseRoutes = require('./routes/expenseRoutes');
+const expenseCategoryRoutes = require('./routes/expenseCategoryRoutes');
+
 const incomeRoutes = require('./routes/incomeRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const incomeCategoryRoutes = require('./routes/incomeCategoryRoutes');
@@ -21,6 +23,7 @@ app.get('/', (req, res) => {
 })
 
 app.use('/expenses', expenseRoutes);
+app.use('/expense-categories', expenseCategoryRoutes);
 app.use('/income', incomeRoutes);
 app.use('/categories', categoryRoutes);
 app.use('/income-categories', incomeCategoryRoutes);
