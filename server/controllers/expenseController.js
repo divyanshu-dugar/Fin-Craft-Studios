@@ -221,10 +221,6 @@ const getExpensesByDateRange = async (req, res) => {
   }
 };
 
-const mongoose = require('mongoose');
-const Expense = require('../models/Expense');
-const ExpenseCategory = require('../models/ExpenseCategory');
-
 const getExpenseStats = async (req, res) => {
   try {
     if (!req.user || !req.user._id) {
@@ -287,8 +283,6 @@ const getExpenseStats = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-module.exports = getExpenseStats;
 
 module.exports = {
   getExpenses,
