@@ -2,11 +2,47 @@ const Expense = require('../models/Expense');
 const ExpenseCategory = require('../models/ExpenseCategory');
 const mongoose = require('mongoose');
 
-// 🟢 Get all expenses for logged-in user (with populated category)
+/**
+ * Helper: Resolve category input (either ObjectId string or category name)
+ * - If value is a valid ObjectId and exists => return that id
+ * - If value is a string name => find existing category by name (case-insensitive)
+ *   - if found => return its id
+ *   - if not found => create a new category and return its id
+ */
+async function resolveCategory(categoryInput) {
+  if (!categoryInput) return null;
+
+  // If ObjectId-like, check existence
+  if (mongoose.Types.ObjectId.isValid(String(categoryInput))) {
+    const cat = await ExpenseCategory.findById(String(categoryInput));
+    if (cat) return cat._id;
+    // If it looked like an ObjectId but doesn't exist, we treat as invalid below
+  }
+
+  // Otherwise treat input as name (string)
+  const name = String(categoryInput).trim();
+  if (!name) return null;
+
+  // Case-insensitive search
+  let existing = await ExpenseCategory.findOne({ name: { $regex: `^${escapeRegExp(name)}$`, $options: 'i' } });
+  if (existing) return existing._id;
+
+  // Create new category (default color can be set or randomized)
+  const newCat = new ExpenseCategory({ name });
+  await newCat.save();
+  return newCat._id;
+}
+
+// small helper to escape regex special chars from name
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Get all expenses for logged-in user (with populated category)
 const getExpenses = async (req, res) => {
   try {
     const expenses = await Expense.find({ user: req.user._id })
-      .populate('category', 'name') // ✅ populate category name
+      .populate('category', 'name color icon')
       .sort({ date: -1 });
 
     res.json(expenses);
@@ -15,17 +51,15 @@ const getExpenses = async (req, res) => {
   }
 };
 
-// 🟢 Get expense by ID (only if it belongs to the user)
+// Get expense by ID (only if it belongs to the user)
 const getExpenseById = async (req, res) => {
   try {
     const expense = await Expense.findOne({
       _id: req.params.id,
       user: req.user._id,
-    }).populate('category', 'name');
+    }).populate('category', 'name color icon');
 
-    if (!expense) {
-      return res.status(404).json({ message: 'Expense not found' });
-    }
+    if (!expense) return res.status(404).json({ message: 'Expense not found' });
 
     res.json(expense);
   } catch (err) {
@@ -33,32 +67,35 @@ const getExpenseById = async (req, res) => {
   }
 };
 
-// 🟢 Add new expense for logged-in user
+// Add new expense for logged-in user
 const addExpense = async (req, res) => {
   try {
     const { date, category, amount, note } = req.body;
 
-    // ✅ Validate referenced category exists
-    if (!mongoose.Types.ObjectId.isValid(category)) {
-      return res.status(400).json({ message: 'Invalid category ID' });
+    // Basic validation
+    if (!date || amount == null) {
+      return res.status(400).json({ message: 'Date and amount are required' });
     }
-    const categoryExists = await ExpenseCategory.findById(category);
-    if (!categoryExists) {
-      return res.status(404).json({ message: 'Category not found' });
+    if (isNaN(Number(amount))) {
+      return res.status(400).json({ message: 'Amount must be a number' });
+    }
+
+    // Resolve category (id or name)
+    const categoryId = await resolveCategory(category);
+    if (!categoryId) {
+      return res.status(400).json({ message: 'Invalid or empty category' });
     }
 
     const expense = new Expense({
       user: req.user._id,
       date,
-      category,
+      category: categoryId,
       amount,
       note,
     });
 
     await expense.save();
-
-    // populate before sending response
-    await expense.populate('category', 'name');
+    await expense.populate('category', 'name color icon');
 
     res.status(201).json({
       message: 'Expense created successfully',
@@ -69,25 +106,30 @@ const addExpense = async (req, res) => {
   }
 };
 
-// 🟢 Update expense (only if it belongs to the user)
+// Update expense (only if it belongs to the user)
 const editExpense = async (req, res) => {
   try {
     const { date, category, amount, note } = req.body;
 
-    // ✅ Optional category validation
-    if (category && !mongoose.Types.ObjectId.isValid(category)) {
-      return res.status(400).json({ message: 'Invalid category ID' });
+    // If category provided, resolve it
+    let categoryId = undefined;
+    if (category !== undefined) {
+      categoryId = await resolveCategory(category);
+      if (!categoryId) {
+        return res.status(400).json({ message: 'Invalid or empty category' });
+      }
     }
+
+    const updateObj = { date, amount, note };
+    if (categoryId) updateObj.category = categoryId;
 
     const expense = await Expense.findOneAndUpdate(
       { _id: req.params.id, user: req.user._id },
-      { date, category, amount, note },
+      updateObj,
       { new: true }
-    ).populate('category', 'name');
+    ).populate('category', 'name color icon');
 
-    if (!expense) {
-      return res.status(404).json({ message: 'Expense not found' });
-    }
+    if (!expense) return res.status(404).json({ message: 'Expense not found' });
 
     res.status(200).json({
       message: 'Expense updated successfully',
@@ -98,7 +140,7 @@ const editExpense = async (req, res) => {
   }
 };
 
-// 🟢 Delete expense (only if it belongs to the user)
+// Delete expense (only if it belongs to the user)
 const deleteExpense = async (req, res) => {
   try {
     const expense = await Expense.findOneAndDelete({
@@ -106,9 +148,7 @@ const deleteExpense = async (req, res) => {
       user: req.user._id,
     });
 
-    if (!expense) {
-      return res.status(404).json({ message: 'Expense not found' });
-    }
+    if (!expense) return res.status(404).json({ message: 'Expense not found' });
 
     res.status(200).json({ message: 'Expense deleted successfully' });
   } catch (err) {
@@ -116,20 +156,36 @@ const deleteExpense = async (req, res) => {
   }
 };
 
-// 🟢 Get expenses by category (category = ObjectId)
+// Get expenses by category (accepts either category id or name)
 const getExpensesByCategory = async (req, res) => {
   try {
-    const { categoryId } = req.params;
+    const param = req.params.categoryId || req.params.category || req.params.id; // be flexible
+    if (!param) return res.status(400).json({ message: 'Category parameter required' });
 
-    if (!mongoose.Types.ObjectId.isValid(categoryId)) {
-      return res.status(400).json({ message: 'Invalid category ID' });
+    // If param is an ObjectId, use it. Otherwise try to resolve name to id
+    let categoryId = null;
+    if (mongoose.Types.ObjectId.isValid(String(param))) {
+      const cat = await ExpenseCategory.findById(String(param));
+      if (cat) categoryId = cat._id;
+      // if not found, we'll attempt name-based fallback
+    }
+
+    if (!categoryId) {
+      // try name-to-id mapping (case-insensitive)
+      const catByName = await ExpenseCategory.findOne({ name: { $regex: `^${escapeRegExp(String(param).trim())}$`, $options: 'i' } });
+      if (catByName) categoryId = catByName._id;
+    }
+
+    if (!categoryId) {
+      // If still not found, respond with empty list or 404 — choose empty list for UX
+      return res.json([]);
     }
 
     const expenses = await Expense.find({
       user: req.user._id,
       category: categoryId,
     })
-      .populate('category', 'name')
+      .populate('category', 'name color icon')
       .sort({ date: -1 });
 
     res.json(expenses);
@@ -138,19 +194,25 @@ const getExpensesByCategory = async (req, res) => {
   }
 };
 
-// 🟢 Get expenses within date range
+// Get expenses within date range
 const getExpensesByDateRange = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
+    if (!startDate || !endDate) return res.status(400).json({ message: 'startDate and endDate are required' });
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (isNaN(start) || isNaN(end)) return res.status(400).json({ message: 'Invalid date range' });
 
     const expenses = await Expense.find({
       user: req.user._id,
       date: {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate),
+        $gte: start,
+        $lte: end,
       },
     })
-      .populate('category', 'name')
+      .populate('category', 'name color icon')
       .sort({ date: -1 });
 
     res.json(expenses);
@@ -159,16 +221,14 @@ const getExpensesByDateRange = async (req, res) => {
   }
 };
 
-// 🟢 Get expense stats (category-wise totals)
+// Get expense stats (category-wise totals)
 const getExpenseStats = async (req, res) => {
   try {
-    if (!req.user || !req.user._id) {
-      return res.status(401).json({ error: 'Unauthorized access' });
-    }
+    if (!req.user || !req.user._id) return res.status(401).json({ error: 'Unauthorized access' });
 
     const userId = new mongoose.Types.ObjectId(req.user._id);
 
-    // Category-wise totals
+    // Category-wise totals (grouped by category ObjectId)
     const categoryStats = await Expense.aggregate([
       { $match: { user: userId } },
       {
@@ -181,10 +241,10 @@ const getExpenseStats = async (req, res) => {
       { $sort: { totalAmount: -1 } },
     ]);
 
-    // Populate category names in aggregation
+    // Populate the category _id to get name/color
     const populatedStats = await ExpenseCategory.populate(categoryStats, {
       path: '_id',
-      select: 'name',
+      select: 'name color icon',
     });
 
     // Overall totals
