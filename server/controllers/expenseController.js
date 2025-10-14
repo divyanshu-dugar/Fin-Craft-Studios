@@ -39,12 +39,12 @@ function escapeRegExp(string) {
 }
 
 // Get all expenses for logged-in user (with populated category)
-const getExpenses = async (req, res) => {
+
+exports.getExpenses = async (req, res) => {
   try {
     const expenses = await Expense.find({ user: req.user._id })
-      .populate('category', 'name color icon')
+      .populate('category') // 👈 populate the ExpenseCategory fields
       .sort({ date: -1 });
-
     res.json(expenses);
   } catch (err) {
     res.status(500).json({ error: err.message });
