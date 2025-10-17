@@ -92,10 +92,17 @@ exports.addExpense = async (req, res) => {
       return res.status(400).json({ message: 'Invalid or empty category' });
     }
 
-    const parsedDate = new Date(req.body.date);
+    // 🕒 Fix: Normalize to UTC midnight (keep only local calendar date)
+    const localDate = new Date(date); // e.g. "2025-10-08"
+    const utcDate = new Date(Date.UTC(
+      localDate.getFullYear(),
+      localDate.getMonth(),
+      localDate.getDate()
+    ));
+
     const expense = new Expense({
       user: req.user._id,
-      date: parsedDate,
+      date: utcDate, // store as UTC midnight
       category: categoryId,
       amount,
       note,
@@ -127,7 +134,17 @@ exports.editExpense = async (req, res) => {
         return res.status(400).json({ message: 'Invalid category' });
     }
 
-    const updateObj = { date, amount, note };
+    const updateObj = { amount, note };
+
+    if (date) {
+      const localDate = new Date(date);
+      updateObj.date = new Date(Date.UTC(
+        localDate.getFullYear(),
+        localDate.getMonth(),
+        localDate.getDate()
+      ));
+    }
+
     if (categoryId) updateObj.category = categoryId;
 
     const expense = await Expense.findOneAndUpdate(
@@ -201,8 +218,21 @@ exports.getExpensesByDateRange = async (req, res) => {
     if (!startDate || !endDate)
       return res.status(400).json({ message: 'startDate and endDate required' });
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const startLocal = new Date(startDate);
+    const endLocal = new Date(endDate);
+
+    const start = new Date(Date.UTC(
+      startLocal.getFullYear(),
+      startLocal.getMonth(),
+      startLocal.getDate()
+    ));
+
+    const end = new Date(Date.UTC(
+      endLocal.getFullYear(),
+      endLocal.getMonth(),
+      endLocal.getDate(),
+      23, 59, 59, 999
+    ));
 
     const expenses = await Expense.find({
       user: req.user._id,
@@ -296,8 +326,24 @@ exports.getExpensesByCategoryAndDateRange = async (req, res) => {
     const categoryId = await resolveCategory(category);
     if (!categoryId) return res.json([]);
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    // const start = new Date(startDate);
+    // const end = new Date(endDate);
+
+    const startLocal = new Date(startDate);
+    const endLocal = new Date(endDate);
+
+    const start = new Date(Date.UTC(
+      startLocal.getFullYear(),
+      startLocal.getMonth(),
+      startLocal.getDate()
+    ));
+
+    const end = new Date(Date.UTC(
+      endLocal.getFullYear(),
+      endLocal.getMonth(),
+      endLocal.getDate(),
+      23, 59, 59, 999
+    ));
 
     const expenses = await Expense.find({
       user: req.user._id,
