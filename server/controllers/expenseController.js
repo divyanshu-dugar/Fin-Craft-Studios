@@ -92,9 +92,10 @@ exports.addExpense = async (req, res) => {
       return res.status(400).json({ message: 'Invalid or empty category' });
     }
 
+    const parsedDate = new Date(req.body.date);
     const expense = new Expense({
       user: req.user._id,
-      date,
+      date: parsedDate,
       category: categoryId,
       amount,
       note,
