@@ -8,7 +8,8 @@ const {
     deleteExpense,
     getExpensesByCategory,
     getExpensesByDateRange,
-    getExpenseStats
+    getExpenseStats,
+    getExpensesByCategoryAndDateRange
 } = require('../controllers/expenseController');
 const passport = require("passport")
 
