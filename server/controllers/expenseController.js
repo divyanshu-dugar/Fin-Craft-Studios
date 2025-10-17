@@ -277,3 +277,37 @@ exports.getExpenseStats = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+/* =============================
+   GET EXPENSES BY CATEGORY + DATE RANGE
+============================= */
+exports.getExpensesByCategoryAndDateRange = async (req, res) => {
+  try {
+    const { category } = req.params;
+    const { startDate, endDate } = req.query;
+
+    if (!category)
+      return res.status(400).json({ message: 'Category parameter required' });
+
+    if (!startDate || !endDate)
+      return res.status(400).json({ message: 'startDate and endDate required' });
+
+    const categoryId = await resolveCategory(category);
+    if (!categoryId) return res.json([]);
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const expenses = await Expense.find({
+      user: req.user._id,
+      category: categoryId,
+      date: { $gte: start, $lte: end },
+    })
+      .populate('category', 'name color icon')
+      .sort({ date: -1 });
+
+    res.json(expenses);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
