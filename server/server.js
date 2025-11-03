@@ -1,7 +1,7 @@
 const app = require('./app');
 const connectDB = require('./config/db');
 // Route imports
-const authRoutes = require('./routes/authRoutes'); 
+const auth = require('./routes/auth'); 
 
 const PORT = process.env.PORT || 8080;
 
@@ -39,7 +39,7 @@ let strategy = new JwtStrategy(jwtOptions, function (jwt_payload, next) {
 passport.use(strategy);
 app.use(passport.initialize());
 
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', auth);
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

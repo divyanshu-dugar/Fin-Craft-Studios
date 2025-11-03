@@ -10,7 +10,7 @@ const {
     getExpensesByDateRange,
     getExpenseStats,
     getExpensesByCategoryAndDateRange
-} = require('../controllers/expenseController');
+} = require('../controllers/expense');
 const passport = require("passport")
 
 // All routes are protected

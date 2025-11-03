@@ -3,7 +3,7 @@ const {
   getExpenseCategories,
   addExpenseCategory,
   deleteExpenseCategory
-} = require('../controllers/expenseCategoryController');
+} = require('../controllers/expenseCategory');
 
 const router = express.Router();
 

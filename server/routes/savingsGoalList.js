@@ -4,7 +4,7 @@ const {
   addSavingGoal,
   deleteSavingGoal,
   updateSavingGoal,
-} = require("../controllers/savingsGoalListController");
+} = require("../controllers/savingsGoalList");
 
 const router = express.Router();
 

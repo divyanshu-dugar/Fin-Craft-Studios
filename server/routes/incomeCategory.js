@@ -1,5 +1,5 @@
 const express = require('express');
-const { getIncomeCategories, addIncomeCategory } = require('../controllers/incomeCategoryController');
+const { getIncomeCategories, addIncomeCategory } = require('../controllers/incomeCategory');
 
 const router = express.Router();
 

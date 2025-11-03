@@ -2,12 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 
-const expenseRoutes = require('./routes/expenseRoutes');
-const expenseCategoryRoutes = require('./routes/expenseCategoryRoutes');
+const expense = require('./routes/expense');
+const expenseCategory = require('./routes/expenseCategory');
 
-const incomeRoutes = require('./routes/incomeRoutes');
-const incomeCategoryRoutes = require('./routes/incomeCategoryRoutes');
-const savingsGoalListRoutes = require('./routes/savingsGoalListRoutes');
+const income = require('./routes/income');
+const incomeCategory = require('./routes/incomeCategory');
+const savingsGoalList = require('./routes/savingsGoalList');
 
 const app = express();
 
@@ -16,15 +16,15 @@ app.use(cors({ origin: ['http://localhost:3000', 'https://ledgerify-client.verce
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Routes
+// 
 app.get('/', (req, res) => {
     res.send("Server running!")
 })
 
-app.use('/expenses', expenseRoutes);
-app.use('/expense-categories', expenseCategoryRoutes);
-app.use('/income', incomeRoutes);
-app.use('/income-categories', incomeCategoryRoutes);
-app.use('/saving-goals', savingsGoalListRoutes);
+app.use('/expenses', expense);
+app.use('/expense-categories', expenseCategory);
+app.use('/income', income);
+app.use('/income-categories', incomeCategory);
+app.use('/saving-goals', savingsGoalList);
 
 module.exports = app;
