@@ -4,7 +4,7 @@ const router = express.Router();
 
 router.post('/analyze', async (req, res) => {
   try {
-    const response = await axios.post('https://fincraft-ml.onrender.com/analyze', {
+    const response = await axios.post('https://fincraft-ml.onrender.com/api/analyze', {
       expenses: req.body.expenses
     });
 
