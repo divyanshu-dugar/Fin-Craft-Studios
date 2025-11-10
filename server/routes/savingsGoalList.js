@@ -6,6 +6,7 @@ const {
   addSavingGoal,
   deleteSavingGoal,
   updateSavingGoal,
+  updateSavedAmount
 } = require("../controllers/savingsGoalList");
 
 // Protect all routes
