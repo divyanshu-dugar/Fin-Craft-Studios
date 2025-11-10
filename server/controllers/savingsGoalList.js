@@ -84,7 +84,7 @@ const updateSavingGoal = async (req, res) => {
 const updateSavedAmount = async (req, res) => {
   try {
     const { savedAmount } = req.body;
-    const goal = await SavingGoal.findById(req.params.id);
+    const goal = await SavingsGoalList.findById(req.params.id);
 
     if (!goal) return res.status(404).json({ message: "Goal not found" });
 
