@@ -80,6 +80,23 @@ const updateSavingGoal = async (req, res) => {
   }
 };
 
+// PUT /saving-goals/:id/save
+exports.updateSavedAmount = async (req, res) => {
+  try {
+    const { savedAmount } = req.body;
+    const goal = await SavingGoal.findById(req.params.id);
+
+    if (!goal) return res.status(404).json({ message: "Goal not found" });
+
+    goal.savedAmount = savedAmount;
+    await goal.save();
+
+    res.json(goal);
+  } catch (err) {
+    res.status(500).json({ message: "Error updating saved amount" });
+  }
+};
+
 module.exports = {
   getSavingGoals,
   addSavingGoal,

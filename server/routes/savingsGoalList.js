@@ -13,5 +13,6 @@ router.get("/", passport.authenticate("jwt", { session: false }), getSavingGoals
 router.post("/", passport.authenticate("jwt", { session: false }), addSavingGoal);
 router.delete("/:id", passport.authenticate("jwt", { session: false }), deleteSavingGoal);
 router.put("/:id", passport.authenticate("jwt", { session: false }), updateSavingGoal);
+router.put('/:id/save', passport.authenticate('jwt', { session: false }), updateSavedAmount);
 
 module.exports = router;

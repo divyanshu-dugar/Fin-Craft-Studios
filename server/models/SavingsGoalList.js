@@ -11,7 +11,8 @@ const savingsGoalSchema = new mongoose.Schema({
     deadline: { type: Date, required: true },
     priority: { type: String, required: true },
     description: { type: String },
-    currentAmount: { type: Number, default: 0 }
+    currentAmount: { type: Number, default: 0 },
+    savedAmount: { type: Number, default: 0, min: 0 }
 }, {
     timestamps: true
 });
