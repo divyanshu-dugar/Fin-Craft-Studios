@@ -81,7 +81,7 @@ const updateSavingGoal = async (req, res) => {
 };
 
 // PUT /saving-goals/:id/save
-exports.updateSavedAmount = async (req, res) => {
+const updateSavedAmount = async (req, res) => {
   try {
     const { savedAmount } = req.body;
     const goal = await SavingGoal.findById(req.params.id);
@@ -102,4 +102,5 @@ module.exports = {
   addSavingGoal,
   deleteSavingGoal,
   updateSavingGoal,
+  updateSavedAmount
 };
