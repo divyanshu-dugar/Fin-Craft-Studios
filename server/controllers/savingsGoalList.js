@@ -1,16 +1,17 @@
 const SavingsGoalList = require("../models/SavingsGoalList");
 
-// Get all savings goals
+// ✅ Get all savings goals for logged-in user
 const getSavingGoals = async (req, res) => {
   try {
-    const savingsGoalList = await SavingsGoalList.find({});
+    const userId = req.user._id;
+    const savingsGoalList = await SavingsGoalList.find({ user: userId }).sort({ createdAt: -1 });
     res.json(savingsGoalList);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// Add a new savings goal
+// ✅ Add a new savings goal for logged-in user
 const addSavingGoal = async (req, res) => {
   try {
     const { name, amount, deadline, priority, description } = req.body;
@@ -20,11 +21,12 @@ const addSavingGoal = async (req, res) => {
     }
 
     const newGoal = new SavingsGoalList({
+      user: req.user._id,
       name,
       amount,
       deadline,
       priority,
-      description
+      description,
     });
 
     const savedGoal = await newGoal.save();
@@ -34,14 +36,19 @@ const addSavingGoal = async (req, res) => {
   }
 };
 
-// Optional: Delete a savings goal
+// ✅ Delete a savings goal (only if owned by user)
 const deleteSavingGoal = async (req, res) => {
   try {
+    const userId = req.user._id;
     const goalId = req.params.id;
-    const deletedGoal = await SavingsGoalList.findByIdAndDelete(goalId);
+
+    const deletedGoal = await SavingsGoalList.findOneAndDelete({
+      _id: goalId,
+      user: userId,
+    });
 
     if (!deletedGoal) {
-      return res.status(404).json({ error: "Savings goal not found" });
+      return res.status(404).json({ error: "Savings goal not found or unauthorized" });
     }
 
     res.json({ message: "Goal deleted successfully", deletedGoal });
@@ -50,18 +57,21 @@ const deleteSavingGoal = async (req, res) => {
   }
 };
 
-// Optional: Update a savings goal
+// ✅ Update a savings goal (only if owned by user)
 const updateSavingGoal = async (req, res) => {
   try {
+    const userId = req.user._id;
     const goalId = req.params.id;
     const updates = req.body;
 
-    const updatedGoal = await SavingsGoalList.findByIdAndUpdate(goalId, updates, {
-      new: true,
-    });
+    const updatedGoal = await SavingsGoalList.findOneAndUpdate(
+      { _id: goalId, user: userId },
+      updates,
+      { new: true }
+    );
 
     if (!updatedGoal) {
-      return res.status(404).json({ error: "Savings goal not found" });
+      return res.status(404).json({ error: "Savings goal not found or unauthorized" });
     }
 
     res.json(updatedGoal);

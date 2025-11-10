@@ -1,4 +1,6 @@
 const express = require("express");
+const router = express.Router();
+const passport = require("passport");
 const {
   getSavingGoals,
   addSavingGoal,
@@ -6,11 +8,10 @@ const {
   updateSavingGoal,
 } = require("../controllers/savingsGoalList");
 
-const router = express.Router();
-
-router.get("/", getSavingGoals);                 // GET all savings goals
-router.post("/", addSavingGoal);                 // POST add a new goal
-router.delete("/:id", deleteSavingGoal);         // DELETE goal by ID
-router.put("/:id", updateSavingGoal);            // PUT update goal by ID
+// Protect all routes
+router.get("/", passport.authenticate("jwt", { session: false }), getSavingGoals);
+router.post("/", passport.authenticate("jwt", { session: false }), addSavingGoal);
+router.delete("/:id", passport.authenticate("jwt", { session: false }), deleteSavingGoal);
+router.put("/:id", passport.authenticate("jwt", { session: false }), updateSavingGoal);
 
 module.exports = router;
