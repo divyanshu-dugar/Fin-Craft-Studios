@@ -12,15 +12,30 @@ const getExpenseCategories = async (req, res) => {
 };
 
 // Add a new category
+// Add a new category for the logged-in user
 const addExpenseCategory = async (req, res) => {
   try {
     const { name, icon, color } = req.body;
-    const existing = await ExpenseCategory.findOne({ name });
-    if (existing) return res.status(400).json({ message: 'Category already exists' });
+    const existing = await ExpenseCategory.findOne({
+      user: req.user._id,
+      name: name.trim(),
+    });
 
-    const category = new ExpenseCategory({ name, icon, color });
+    if (existing)
+      return res.status(400).json({ message: 'Category already exists' });
+
+    const category = new ExpenseCategory({
+      user: req.user._id,
+      name: name.trim(),
+      icon,
+      color,
+    });
+
     await category.save();
-    res.status(201).json({ message: 'Expense category created successfully', category });
+    res.status(201).json({
+      message: 'Expense category created successfully',
+      category,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -29,11 +44,16 @@ const addExpenseCategory = async (req, res) => {
 // Delete expense category
 const deleteExpenseCategory = async (req, res) => {
   try {
-    const category = await Category.findByIdAndDelete(req.params.id);
+    const category = await ExpenseCategory.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user._id,
+    });
+
     if (!category) {
-      return res.status(404).json({ message: "Category not found" });
+      return res.status(404).json({ message: 'Category not found' });
     }
-    res.status(200).json({ message: "Category Deleted Successfully" });
+
+    res.status(200).json({ message: 'Category deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

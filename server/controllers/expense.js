@@ -5,12 +5,15 @@ const mongoose = require('mongoose');
 /**
  * Helper: Resolve category input (either ObjectId string or category name)
  */
-async function resolveCategory(categoryInput) {
+async function resolveCategory(categoryInput, userId) {
   if (!categoryInput) return null;
 
-  // If ObjectId-like, check existence
+  // If ObjectId-like, check existence (within user's categories)
   if (mongoose.Types.ObjectId.isValid(String(categoryInput))) {
-    const cat = await ExpenseCategory.findById(String(categoryInput));
+    const cat = await ExpenseCategory.findOne({
+      _id: String(categoryInput),
+      user: userId,
+    });
     if (cat) return cat._id;
   }
 
@@ -19,17 +22,18 @@ async function resolveCategory(categoryInput) {
   if (!name) return null;
 
   const existing = await ExpenseCategory.findOne({
+    user: userId,
     name: { $regex: `^${escapeRegExp(name)}$`, $options: 'i' },
   });
 
-  // If category exists, return it
   if (existing) return existing._id;
 
-  // If not, create new category with default color/icon
+  // If not found, create a new one for this user
   const newCat = new ExpenseCategory({
+    user: userId,
     name,
-    color: '#9CA3AF', // default grey
-    icon: '💰',        // default icon
+    color: '#9CA3AF',
+    icon: '💰',
   });
   await newCat.save();
   return newCat._id;
@@ -193,7 +197,7 @@ exports.getExpensesByCategory = async (req, res) => {
     if (!categoryParam)
       return res.status(400).json({ message: 'Category parameter required' });
 
-    const categoryId = await resolveCategory(categoryParam);
+    const categoryId = await resolveCategory(categoryParam, req.user._id);
     if (!categoryId) return res.json([]);
 
     const expenses = await Expense.find({
