@@ -1,142 +1,391 @@
+const Expense = require('../models/Expense');
 const ExpenseCategory = require('../models/ExpenseCategory');
-const Expense = require('../models/Expense'); // Import Expense to handle related expenses
+const mongoose = require('mongoose');
+
+/**
+ * Helper: Resolve category input (either ObjectId string or category name)
+ */
+async function resolveCategory(categoryInput, userId) {
+  if (!categoryInput) return null;
+
+  // If ObjectId-like, check existence (within user's categories)
+  if (mongoose.Types.ObjectId.isValid(String(categoryInput))) {
+    const cat = await ExpenseCategory.findOne({
+      _id: String(categoryInput),
+      user: userId,
+    });
+    if (cat) return cat._id;
+  }
+
+  // Otherwise, treat input as a name (case-insensitive)
+  const name = String(categoryInput).trim();
+  if (!name) return null;
+
+  const existing = await ExpenseCategory.findOne({
+    user: userId,
+    name: { $regex: `^${escapeRegExp(name)}$`, $options: 'i' },
+  });
+
+  if (existing) return existing._id;
+
+  // If not found, create a new one for this user
+  const newCat = new ExpenseCategory({
+    user: userId,
+    name,
+    color: '#9CA3AF',
+    icon: '💰',
+  });
+  await newCat.save();
+  return newCat._id;
+}
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 /* =============================
-   GET ALL CATEGORIES (user-specific)
+   GET ALL EXPENSES (user-specific)
 ============================= */
-exports.getExpenseCategories = async (req, res) => {
+exports.getExpenses = async (req, res) => {
   try {
-    const categories = await ExpenseCategory.find({ user: req.user._id }).sort({ name: 1 });
-    res.json(categories);
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const expenses = await Expense.find({ user: req.user._id })
+      .populate('category', 'name color icon')
+      .sort({ date: -1 });
+    res.json(expenses);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
 /* =============================
-   ADD NEW CATEGORY (user-specific)
+   GET EXPENSE BY ID
 ============================= */
-exports.addExpenseCategory = async (req, res) => {
+exports.getExpenseById = async (req, res) => {
   try {
-    const { name, color, icon } = req.body;
-
-    if (!name || !name.trim()) {
-      return res.status(400).json({ message: 'Category name is required' });
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Check if category name already exists for this user
-    const existingCategory = await ExpenseCategory.findOne({
+    const expense = await Expense.findOne({
+      _id: req.params.id,
       user: req.user._id,
-      name: { $regex: `^${name.trim()}$`, $options: 'i' }
-    });
+    }).populate('category', 'name color icon');
 
-    if (existingCategory) {
-      return res.status(400).json({ message: 'Category name already exists' });
+    if (!expense)
+      return res.status(404).json({ message: 'Expense not found' });
+
+    res.json(expense);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* =============================
+   ADD NEW EXPENSE
+============================= */
+exports.addExpense = async (req, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const category = new ExpenseCategory({
+    const { date, category, amount, note } = req.body;
+
+    if (!date || amount == null) {
+      return res.status(400).json({ message: 'Date and amount are required' });
+    }
+
+    if (isNaN(Number(amount))) {
+      return res.status(400).json({ message: 'Amount must be a number' });
+    }
+
+    const categoryId = await resolveCategory(category, req.user._id); // ✅ Added userId
+    if (!categoryId) {
+      return res.status(400).json({ message: 'Invalid or empty category' });
+    }
+
+    const localDate = new Date(date);
+    const utcDate = new Date(Date.UTC(
+      localDate.getFullYear(),
+      localDate.getMonth(),
+      localDate.getDate()
+    ));
+
+    const expense = new Expense({
       user: req.user._id,
-      name: name.trim(),
-      color: color || '#9CA3AF',
-      icon: icon || '💰'
+      date: utcDate,
+      category: categoryId,
+      amount,
+      note,
     });
 
-    await category.save();
+    await expense.save();
+    await expense.populate('category', 'name color icon');
+
     res.status(201).json({
-      message: 'Category created successfully',
-      category
+      message: 'Expense created successfully',
+      expense,
     });
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(400).json({ message: 'Category name already exists' });
-    }
     res.status(500).json({ error: err.message });
   }
 };
 
 /* =============================
-   UPDATE CATEGORY (user-specific)
+   UPDATE EXPENSE
 ============================= */
-exports.editExpenseCategory = async (req, res) => {
+exports.editExpense = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { name, color, icon } = req.body;
-
-    // Find the category and verify it belongs to the current user
-    const category = await ExpenseCategory.findOne({
-      _id: id,
-      user: req.user._id
-    });
-
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // If name is being updated, check for uniqueness
-    if (name && name.trim() !== category.name) {
-      const existingCategory = await ExpenseCategory.findOne({
-        user: req.user._id,
-        name: { $regex: `^${name.trim()}$`, $options: 'i' },
-        _id: { $ne: id } // Exclude current category
-      });
+    const { date, category, amount, note } = req.body;
 
-      if (existingCategory) {
-        return res.status(400).json({ message: 'Category name already exists' });
-      }
-
-      category.name = name.trim();
+    let categoryId;
+    if (category) {
+      categoryId = await resolveCategory(category, req.user._id); // ✅ Added userId
+      if (!categoryId)
+        return res.status(400).json({ message: 'Invalid category' });
     }
 
-    // Update other fields if provided
-    if (color) category.color = color;
-    if (icon) category.icon = icon;
+    const updateObj = { amount, note };
 
-    await category.save();
+    if (date) {
+      const localDate = new Date(date);
+      updateObj.date = new Date(Date.UTC(
+        localDate.getFullYear(),
+        localDate.getMonth(),
+        localDate.getDate()
+      ));
+    }
+
+    if (categoryId) updateObj.category = categoryId;
+
+    const expense = await Expense.findOneAndUpdate(
+      { _id: req.params.id, user: req.user._id }, // ✅ User check
+      updateObj,
+      { new: true }
+    ).populate('category', 'name color icon');
+
+    if (!expense)
+      return res.status(404).json({ message: 'Expense not found' });
+
     res.json({
-      message: 'Category updated successfully',
-      category
+      message: 'Expense updated successfully',
+      expense,
     });
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(400).json({ message: 'Category name already exists' });
-    }
     res.status(500).json({ error: err.message });
   }
 };
 
 /* =============================
-   DELETE CATEGORY (user-specific)
+   DELETE EXPENSE
 ============================= */
-exports.deleteExpenseCategory = async (req, res) => {
+exports.deleteExpense = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    // Find the category and verify it belongs to the current user
-    const category = await ExpenseCategory.findOne({
-      _id: id,
-      user: req.user._id
-    });
-
-    if (!category) {
-      return res.status(404).json({ message: 'Category not found' });
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Check if category is being used by any expenses
-    const expensesUsingCategory = await Expense.findOne({
-      category: id,
-      user: req.user._id
+    const expense = await Expense.findOneAndDelete({
+      _id: req.params.id,
+      user: req.user._id, // ✅ User check
     });
 
-    if (expensesUsingCategory) {
-      return res.status(400).json({ 
-        message: 'Cannot delete category. It is being used by one or more expenses.' 
-      });
+    if (!expense)
+      return res.status(404).json({ message: 'Expense not found' });
+
+    res.json({ message: 'Expense deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* =============================
+   GET EXPENSES BY CATEGORY
+============================= */
+exports.getExpensesByCategory = async (req, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Delete the category
-    await ExpenseCategory.findByIdAndDelete(id);
-    
-    res.json({ message: 'Category deleted successfully' });
+    const categoryParam = req.params.category;
+    if (!categoryParam)
+      return res.status(400).json({ message: 'Category parameter required' });
+
+    const categoryId = await resolveCategory(categoryParam, req.user._id);
+    if (!categoryId) return res.json([]);
+
+    const expenses = await Expense.find({
+      user: req.user._id,
+      category: categoryId,
+    })
+      .populate('category', 'name color icon')
+      .sort({ date: -1 });
+
+    res.json(expenses);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* =============================
+   GET EXPENSES BY DATE RANGE
+============================= */
+exports.getExpensesByDateRange = async (req, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { startDate, endDate } = req.query;
+    if (!startDate || !endDate)
+      return res.status(400).json({ message: 'startDate and endDate required' });
+
+    const startLocal = new Date(startDate);
+    const endLocal = new Date(endDate);
+
+    const start = new Date(Date.UTC(
+      startLocal.getFullYear(),
+      startLocal.getMonth(),
+      startLocal.getDate()
+    ));
+
+    const end = new Date(Date.UTC(
+      endLocal.getFullYear(),
+      endLocal.getMonth(),
+      endLocal.getDate(),
+      23, 59, 59, 999
+    ));
+
+    const expenses = await Expense.find({
+      user: req.user._id,
+      date: { $gte: start, $lte: end },
+    })
+      .populate('category', 'name color icon')
+      .sort({ date: -1 });
+
+    res.json(expenses);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* =============================
+   GET EXPENSE STATS
+============================= */
+exports.getExpenseStats = async (req, res) => {
+  try {
+    if (!req.user || !req.user._id)
+      return res.status(401).json({ error: 'Unauthorized' });
+
+    const userId = new mongoose.Types.ObjectId(req.user._id);
+
+    const categoryStats = await Expense.aggregate([
+      { $match: { user: userId } },
+      {
+        $group: {
+          _id: '$category',
+          totalAmount: { $sum: '$amount' },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { totalAmount: -1 } },
+    ]);
+
+    const populatedStats = await Promise.all(
+      categoryStats.map(async (stat) => {
+        const category = await ExpenseCategory.findById(stat._id);
+        return {
+          category: category
+            ? { _id: category._id, name: category.name, color: category.color, icon: category.icon }
+            : { _id: null, name: 'Unknown', color: '#9CA3AF', icon: '❓' },
+          totalAmount: stat.totalAmount,
+          count: stat.count,
+        };
+      })
+    );
+
+    const totals = await Expense.aggregate([
+      { $match: { user: userId } },
+      {
+        $group: {
+          _id: null,
+          totalExpenses: { $sum: '$amount' },
+          totalTransactions: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const totalExpenses = totals[0]?.totalExpenses || 0;
+    const totalTransactions = totals[0]?.totalTransactions || 0;
+    const avgExpense = totalTransactions ? totalExpenses / totalTransactions : 0;
+
+    res.json({
+      categoryStats: populatedStats,
+      totalExpenses,
+      totalTransactions,
+      avgExpense,
+    });
+  } catch (err) {
+    console.error('Error getting expense stats:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+/* =============================
+   GET EXPENSES BY CATEGORY + DATE RANGE
+============================= */
+exports.getExpensesByCategoryAndDateRange = async (req, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { category } = req.params;
+    const { startDate, endDate } = req.query;
+
+    if (!category)
+      return res.status(400).json({ message: 'Category parameter required' });
+
+    if (!startDate || !endDate)
+      return res.status(400).json({ message: 'startDate and endDate required' });
+
+    const categoryId = await resolveCategory(category, req.user._id); // ✅ Added userId
+    if (!categoryId) return res.json([]);
+
+    const startLocal = new Date(startDate);
+    const endLocal = new Date(endDate);
+
+    const start = new Date(Date.UTC(
+      startLocal.getFullYear(),
+      startLocal.getMonth(),
+      startLocal.getDate()
+    ));
+
+    const end = new Date(Date.UTC(
+      endLocal.getFullYear(),
+      endLocal.getMonth(),
+      endLocal.getDate(),
+      23, 59, 59, 999
+    ));
+
+    const expenses = await Expense.find({
+      user: req.user._id,
+      category: categoryId,
+      date: { $gte: start, $lte: end },
+    })
+      .populate('category', 'name color icon')
+      .sort({ date: -1 });
+
+    res.json(expenses);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
