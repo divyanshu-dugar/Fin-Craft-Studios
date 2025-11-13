@@ -1,9 +1,10 @@
 const ExpenseCategory = require('../models/ExpenseCategory');
 
 // Get all categories
+// Get all categories for a specific user
 const getExpenseCategories = async (req, res) => {
   try {
-    const categories = await ExpenseCategory.find({});
+    const categories = await ExpenseCategory.find({ user: req.user._id });
     res.json(categories);
   } catch (err) {
     res.status(500).json({ error: err.message });
