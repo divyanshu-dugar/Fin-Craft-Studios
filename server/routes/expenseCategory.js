@@ -8,12 +8,12 @@ const {
 const router = express.Router();
 
 // GET all categories
-router.get('/', getExpenseCategories);
+router.get('/', passport.authenticate('jwt', { session: false }), getExpenseCategories);
 
 // POST new category
-router.post('/', addExpenseCategory);
+router.post('/', passport.authenticate('jwt', { session: false }), addExpenseCategory);
 
 // DELETE category by id
-router.delete('/:id', deleteExpenseCategory);
+router.delete('/:id', passport.authenticate('jwt', { session: false }), deleteExpenseCategory);
 
 module.exports = router;
