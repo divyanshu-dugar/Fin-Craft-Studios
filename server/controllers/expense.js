@@ -390,3 +390,80 @@ exports.getExpensesByCategoryAndDateRange = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+/* =============================
+   IMPORT EXPENSES FROM CSV/EXCEL
+============================= */
+exports.importExpenses = async (req, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { expenses } = req.body;
+
+    if (!expenses || !Array.isArray(expenses)) {
+      return res.status(400).json({ message: 'Invalid expenses data' });
+    }
+
+    const importedExpenses = [];
+    const errors = [];
+
+    for (const [index, expenseData] of expenses.entries()) {
+      try {
+        const { date, category, amount, note } = expenseData;
+
+        // Validate required fields
+        if (!date || amount == null) {
+          errors.push(`Row ${index + 1}: Date and amount are required`);
+          continue;
+        }
+
+        if (isNaN(Number(amount))) {
+          errors.push(`Row ${index + 1}: Amount must be a number`);
+          continue;
+        }
+
+        // Resolve category
+        const categoryId = await resolveCategory(category, req.user._id);
+        if (!categoryId) {
+          errors.push(`Row ${index + 1}: Invalid or empty category`);
+          continue;
+        }
+
+        // Convert date to UTC
+        const localDate = new Date(date);
+        const utcDate = new Date(Date.UTC(
+          localDate.getFullYear(),
+          localDate.getMonth(),
+          localDate.getDate()
+        ));
+
+        const expense = new Expense({
+          user: req.user._id,
+          date: utcDate,
+          category: categoryId,
+          amount: Number(amount),
+          note: note || '',
+        });
+
+        await expense.save();
+        await expense.populate('category', 'name color icon');
+        importedExpenses.push(expense);
+      } catch (error) {
+        errors.push(`Row ${index + 1}: ${error.message}`);
+      }
+    }
+
+    res.json({
+      message: `Successfully imported ${importedExpenses.length} expenses`,
+      importedCount: importedExpenses.length,
+      errors: errors,
+      expenses: importedExpenses
+    });
+
+  } catch (err) {
+    console.error('Error importing expenses:', err);
+    res.status(500).json({ error: err.message });
+  }
+};

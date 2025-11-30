@@ -9,7 +9,8 @@ const {
     getExpensesByCategory,
     getExpensesByDateRange,
     getExpenseStats,
-    getExpensesByCategoryAndDateRange
+    getExpensesByCategoryAndDateRange,
+    importExpenses
 } = require('../controllers/expense');
 const passport = require("passport")
 
@@ -21,6 +22,7 @@ router.get('/date-range', passport.authenticate('jwt', { session: false }), getE
 router.get('/category/:category/date-range', passport.authenticate('jwt', { session: false }), getExpensesByCategoryAndDateRange); 
 router.get('/:id', passport.authenticate('jwt', { session: false }), getExpenseById);
 router.post('/', passport.authenticate('jwt', { session: false }), addExpense);
+router.post('/import', passport.authenticate('jwt', { session: false }), importExpenses); 
 router.put('/:id', passport.authenticate('jwt', { session: false }), editExpense);
 router.delete('/:id', passport.authenticate('jwt', { session: false }), deleteExpense);
 
