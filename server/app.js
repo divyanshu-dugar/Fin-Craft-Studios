@@ -8,6 +8,7 @@ const expenseCategory = require('./routes/expenseCategory');
 const income = require('./routes/income');
 const incomeCategory = require('./routes/incomeCategory');
 const savingsGoalList = require('./routes/savingsGoalList');
+const budgetRoutes = require('./routes/budget');
 const analytics = require('./routes/analytics'); // ✅ New
 
 const app = express();
@@ -34,6 +35,7 @@ app.use('/expense-categories', expenseCategory);
 app.use('/income', income);
 app.use('/income-categories', incomeCategory);
 app.use('/saving-goals', savingsGoalList);
+app.use('/budgets', budgetRoutes);
 app.use('/api', analytics); // ✅ New AI route
 
 module.exports = app;
