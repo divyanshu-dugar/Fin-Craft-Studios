@@ -7,9 +7,6 @@ const mongoose = require('mongoose');
 /* =============================
    GET ALL BUDGETS (user-specific)
 ============================= */
-/* =============================
-   GET ALL BUDGETS (user-specific)
-============================= */
 exports.getBudgets = async (req, res) => {
     try {
         if (!req.user || !req.user._id) {
@@ -20,19 +17,29 @@ exports.getBudgets = async (req, res) => {
             .populate('category', 'name color icon')
             .sort({ createdAt: -1 });
 
-        // Calculate current spending for each budget
         const budgetsWithSpending = await Promise.all(
-            budgets.map(async (budget) => {
-                const currentSpent = await calculateBudgetSpending(budget);
-                const percentage = (currentSpent / budget.amount) * 100;
-                
-                return {
-                    ...budget.toObject(),
-                    currentSpent,
-                    percentage: Math.min(percentage, 100),
-                    remaining: Math.max(budget.amount - currentSpent, 0)
-                };
-            })
+        budgets.map(async (budget) => {
+            const currentSpent = await calculateBudgetSpending(budget);
+            const percentage = (currentSpent / budget.amount) * 100;
+            const today = new Date();
+            const startDate = new Date(budget.startDate);
+            const endDate = new Date(budget.endDate);
+            
+            let dateStatus = 'current';
+            if (today < startDate) {
+            dateStatus = 'upcoming';
+            } else if (today > endDate) {
+            dateStatus = 'expired';
+            }
+            
+            return {
+            ...budget.toObject(),
+            currentSpent,
+            percentage: Math.min(percentage, 100),
+            remaining: Math.max(budget.amount - currentSpent, 0),
+            dateStatus
+            };
+        })
         );
         
         res.json(budgetsWithSpending);
