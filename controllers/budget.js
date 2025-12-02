@@ -18,28 +18,39 @@ exports.getBudgets = async (req, res) => {
             .sort({ createdAt: -1 });
 
         const budgetsWithSpending = await Promise.all(
-        budgets.map(async (budget) => {
-            const currentSpent = await calculateBudgetSpending(budget);
-            const percentage = (currentSpent / budget.amount) * 100;
-            const today = new Date();
-            const startDate = new Date(budget.startDate);
-            const endDate = new Date(budget.endDate);
-            
-            let dateStatus = 'current';
-            if (today < startDate) {
-            dateStatus = 'upcoming';
-            } else if (today > endDate) {
-            dateStatus = 'expired';
-            }
-            
-            return {
-            ...budget.toObject(),
-            currentSpent,
-            percentage: Math.min(percentage, 100),
-            remaining: Math.max(budget.amount - currentSpent, 0),
-            dateStatus
-            };
-        })
+            budgets.map(async (budget) => {
+                const currentSpent = await calculateBudgetSpending(budget);
+                const percentage = (currentSpent / budget.amount) * 100;
+                const today = new Date();
+                const startDate = new Date(budget.startDate);
+                const endDate = new Date(budget.endDate);
+                
+                // Calculate budget status
+                let status = 'on_track';
+                if (percentage > 100) {
+                    status = 'exceeded';
+                } else if (percentage === 100) {
+                    status = 'limit_reached';
+                } else if (percentage >= budget.alertThreshold) {
+                    status = 'almost_exceeded';
+                }
+                
+                let dateStatus = 'current';
+                if (today < startDate) {
+                    dateStatus = 'upcoming';
+                } else if (today > endDate) {
+                    dateStatus = 'expired';
+                }
+                
+                return {
+                    ...budget.toObject(),
+                    currentSpent,
+                    percentage: Math.min(percentage, 100),
+                    remaining: Math.max(budget.amount - currentSpent, 0),
+                    status,
+                    dateStatus
+                };
+            })
         );
         
         res.json(budgetsWithSpending);
@@ -69,12 +80,23 @@ exports.getBudgetById = async (req, res) => {
         // Calculate current spending for this budget
         const currentSpent = await calculateBudgetSpending(budget);
         const percentage = (currentSpent / budget.amount) * 100;
+        
+        // Calculate budget status
+        let status = 'on_track';
+        if (percentage > 100) {
+            status = 'exceeded';
+        } else if (percentage === 100) {
+            status = 'limit_reached';
+        } else if (percentage >= budget.alertThreshold) {
+            status = 'almost_exceeded';
+        }
 
         res.json({
             ...budget.toObject(),
             currentSpent,
             percentage: Math.min(percentage, 100),
-            remaining: Math.max(budget.amount - currentSpent, 0)
+            remaining: Math.max(budget.amount - currentSpent, 0),
+            status
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -242,9 +264,12 @@ exports.getBudgetStats = async (req, res) => {
                 const percentage = (currentSpent / budget.amount) * 100;
                 const remaining = Math.max(budget.amount - currentSpent, 0);
                 
+                // Calculate budget status
                 let status = 'on_track';
-                if (percentage >= 100) {
+                if (percentage > 100) {
                     status = 'exceeded';
+                } else if (percentage === 100) {
+                    status = 'limit_reached';
                 } else if (percentage >= budget.alertThreshold) {
                     status = 'almost_exceeded';
                 }
@@ -262,17 +287,27 @@ exports.getBudgetStats = async (req, res) => {
         // Overall stats
         const totalBudget = budgets.reduce((sum, budget) => sum + budget.amount, 0);
         const totalSpent = budgetStats.reduce((sum, stat) => sum + stat.currentSpent, 0);
+        const totalRemaining = Math.max(totalBudget - totalSpent, 0);
         const overallPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+        
+        // Count budgets by status
+        const onTrackBudgets = budgetStats.filter(stat => stat.status === 'on_track').length;
+        const almostExceededBudgets = budgetStats.filter(stat => stat.status === 'almost_exceeded').length;
+        const limitReachedBudgets = budgetStats.filter(stat => stat.status === 'limit_reached').length;
+        const exceededBudgets = budgetStats.filter(stat => stat.status === 'exceeded').length;
 
         res.json({
             budgetStats,
             overallStats: {
                 totalBudget,
                 totalSpent,
-                totalRemaining: Math.max(totalBudget - totalSpent, 0),
+                totalRemaining,
                 overallPercentage: Math.min(overallPercentage, 100),
                 activeBudgets: budgets.length,
-                exceededBudgets: budgetStats.filter(stat => stat.status === 'exceeded').length
+                onTrackBudgets,
+                almostExceededBudgets,
+                limitReachedBudgets,
+                exceededBudgets
             }
         });
     } catch (err) {
@@ -303,8 +338,8 @@ exports.checkBudgetAlerts = async (req, res) => {
             const percentage = (currentSpent / budget.amount) * 100;
 
             // Check if we need to create alerts
-            if (percentage >= 100) {
-                // Budget exceeded
+            if (percentage > 100) {
+                // Budget exceeded (over 100%)
                 const existingAlert = await BudgetAlert.findOne({
                     budget: budget._id,
                     type: 'budget_exceeded',
@@ -324,8 +359,29 @@ exports.checkBudgetAlerts = async (req, res) => {
                     await alert.save();
                     newAlerts.push(alert);
                 }
+            } else if (percentage === 100) {
+                // Budget limit reached (exactly 100%)
+                const existingAlert = await BudgetAlert.findOne({
+                    budget: budget._id,
+                    type: 'budget_limit_reached',
+                    isRead: false
+                });
+
+                if (!existingAlert) {
+                    const alert = new BudgetAlert({
+                        user: req.user._id,
+                        budget: budget._id,
+                        type: 'budget_limit_reached',
+                        message: `Budget "${budget.name}" has reached its limit! Spent ${currentSpent} out of ${budget.amount}`,
+                        currentSpent,
+                        budgetAmount: budget.amount,
+                        percentage
+                    });
+                    await alert.save();
+                    newAlerts.push(alert);
+                }
             } else if (percentage >= budget.alertThreshold) {
-                // Budget almost exceeded
+                // Budget almost exceeded (80-99%)
                 const existingAlert = await BudgetAlert.findOne({
                     budget: budget._id,
                     type: 'budget_almost_exceeded',
