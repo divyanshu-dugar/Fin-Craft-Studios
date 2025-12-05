@@ -44,7 +44,7 @@ function escapeRegExp(string) {
 }
 
 /* =============================
-   GET ALL EXPENSES (user-specific)
+   GET ALL EXPENSES (user-specific) WITH DATE RANGE SUPPORT
 ============================= */
 exports.getExpenses = async (req, res) => {
   try {
@@ -52,9 +52,36 @@ exports.getExpenses = async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const expenses = await Expense.find({ user: req.user._id })
+    // Build query object
+    let query = { user: req.user._id };
+
+    // Check for date range query parameters
+    const { startDate, endDate } = req.query;
+    
+    if (startDate && endDate) {
+      const startLocal = new Date(startDate);
+      const endLocal = new Date(endDate);
+
+      const start = new Date(Date.UTC(
+        startLocal.getFullYear(),
+        startLocal.getMonth(),
+        startLocal.getDate()
+      ));
+
+      const end = new Date(Date.UTC(
+        endLocal.getFullYear(),
+        endLocal.getMonth(),
+        endLocal.getDate(),
+        23, 59, 59, 999
+      ));
+
+      query.date = { $gte: start, $lte: end };
+    }
+
+    const expenses = await Expense.find(query)
       .populate('category', 'name color icon')
       .sort({ date: -1 });
+    
     res.json(expenses);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -279,7 +306,7 @@ exports.getExpensesByDateRange = async (req, res) => {
 };
 
 /* =============================
-   GET EXPENSE STATS
+   GET EXPENSE STATS WITH DATE RANGE SUPPORT
 ============================= */
 exports.getExpenseStats = async (req, res) => {
   try {
@@ -288,8 +315,34 @@ exports.getExpenseStats = async (req, res) => {
 
     const userId = new mongoose.Types.ObjectId(req.user._id);
 
+    // Build match stage for aggregation
+    let matchStage = { user: userId };
+
+    // Check for date range query parameters
+    const { startDate, endDate } = req.query;
+    
+    if (startDate && endDate) {
+      const startLocal = new Date(startDate);
+      const endLocal = new Date(endDate);
+
+      const start = new Date(Date.UTC(
+        startLocal.getFullYear(),
+        startLocal.getMonth(),
+        startLocal.getDate()
+      ));
+
+      const end = new Date(Date.UTC(
+        endLocal.getFullYear(),
+        endLocal.getMonth(),
+        endLocal.getDate(),
+        23, 59, 59, 999
+      ));
+
+      matchStage.date = { $gte: start, $lte: end };
+    }
+
     const categoryStats = await Expense.aggregate([
-      { $match: { user: userId } },
+      { $match: matchStage },
       {
         $group: {
           _id: '$category',
@@ -304,9 +357,7 @@ exports.getExpenseStats = async (req, res) => {
       categoryStats.map(async (stat) => {
         const category = await ExpenseCategory.findById(stat._id);
         return {
-          category: category
-            ? { _id: category._id, name: category.name, color: category.color, icon: category.icon }
-            : { _id: null, name: 'Unknown', color: '#9CA3AF', icon: '❓' },
+          name: category ? category.name : 'Unknown',
           totalAmount: stat.totalAmount,
           count: stat.count,
         };
@@ -314,7 +365,7 @@ exports.getExpenseStats = async (req, res) => {
     );
 
     const totals = await Expense.aggregate([
-      { $match: { user: userId } },
+      { $match: matchStage },
       {
         $group: {
           _id: null,
