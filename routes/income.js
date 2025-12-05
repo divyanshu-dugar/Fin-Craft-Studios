@@ -7,7 +7,6 @@ const {
     editIncome,
     deleteIncome,
     getIncomesByCategory,
-    getIncomesByDateRange,
     getIncomeStats,
     getIncomesByCategoryAndDateRange
 } = require('../controllers/income');
@@ -17,7 +16,6 @@ const passport = require("passport")
 router.get('/', passport.authenticate('jwt', { session: false }), getIncomes);
 router.get('/stats', passport.authenticate('jwt', { session: false }), getIncomeStats);
 router.get('/category/:category', passport.authenticate('jwt', { session: false }), getIncomesByCategory);
-router.get('/date-range', passport.authenticate('jwt', { session: false }), getIncomesByDateRange);
 router.get('/category/:category/date-range', passport.authenticate('jwt', { session: false }), getIncomesByCategoryAndDateRange); 
 router.get('/:id', passport.authenticate('jwt', { session: false }), getIncomeById);
 router.post('/', passport.authenticate('jwt', { session: false }), addIncome);
