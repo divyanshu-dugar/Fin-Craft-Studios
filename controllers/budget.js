@@ -5,7 +5,7 @@ const ExpenseCategory = require('../models/ExpenseCategory');
 const mongoose = require('mongoose');
 
 /* =============================
-   GET ALL BUDGETS (user-specific)
+   GET ALL BUDGETS (user-specific) WITH OPTIONAL DATE RANGE FILTER
 ============================= */
 exports.getBudgets = async (req, res) => {
     try {
@@ -13,17 +13,65 @@ exports.getBudgets = async (req, res) => {
             return res.status(401).json({ error: 'Unauthorized' });
         }
 
-        const budgets = await Budget.find({ user: req.user._id })
+        // Build query object
+        let query = { user: req.user._id };
+
+        // Check for date range query parameters
+        const { startDate, endDate } = req.query;
+        
+        // If date range is provided, filter budgets that overlap with the date range
+        if (startDate && endDate) {
+            const queryStartDate = new Date(startDate);
+            const queryEndDate = new Date(endDate);
+            
+            query.$and = [
+                { startDate: { $lte: queryEndDate } },
+                { endDate: { $gte: queryStartDate } }
+            ];
+        }
+
+        const budgets = await Budget.find(query)
             .populate('category', 'name color icon')
             .sort({ createdAt: -1 });
 
         const budgetsWithSpending = await Promise.all(
             budgets.map(async (budget) => {
-                const currentSpent = await calculateBudgetSpending(budget);
-                const percentage = (currentSpent / budget.amount) * 100;
+                // For budget spending calculation, consider query date range if provided
+                let spendingStartDate = new Date(budget.startDate);
+                let spendingEndDate = new Date(budget.endDate);
+                
+                if (startDate && endDate) {
+                    spendingStartDate = new Date(Math.max(
+                        new Date(budget.startDate).getTime(),
+                        new Date(startDate).getTime()
+                    ));
+                    
+                    spendingEndDate = new Date(Math.min(
+                        new Date(budget.endDate).getTime(),
+                        new Date(endDate).getTime()
+                    ));
+                }
+
+                const expenses = await Expense.find({
+                    user: budget.user,
+                    category: budget.category,
+                    date: {
+                        $gte: spendingStartDate,
+                        $lte: spendingEndDate
+                    }
+                });
+
+                const currentSpent = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+                
+                // Calculate proportional budget
+                const budgetTotalDays = (new Date(budget.endDate) - new Date(budget.startDate)) / (1000 * 60 * 60 * 24) + 1;
+                const queryDays = (spendingEndDate - spendingStartDate) / (1000 * 60 * 60 * 24) + 1;
+                const proportionalBudget = (budget.amount * queryDays) / budgetTotalDays;
+                
+                const percentage = proportionalBudget > 0 ? (currentSpent / proportionalBudget) * 100 : 0;
                 const today = new Date();
-                const startDate = new Date(budget.startDate);
-                const endDate = new Date(budget.endDate);
+                const budgetStartDate = new Date(budget.startDate);
+                const budgetEndDate = new Date(budget.endDate);
                 
                 // Calculate budget status
                 let status = 'on_track';
@@ -36,9 +84,9 @@ exports.getBudgets = async (req, res) => {
                 }
                 
                 let dateStatus = 'current';
-                if (today < startDate) {
+                if (today < budgetStartDate) {
                     dateStatus = 'upcoming';
-                } else if (today > endDate) {
+                } else if (today > budgetEndDate) {
                     dateStatus = 'expired';
                 }
                 
@@ -46,9 +94,12 @@ exports.getBudgets = async (req, res) => {
                     ...budget.toObject(),
                     currentSpent,
                     percentage: Math.min(percentage, 100),
-                    remaining: Math.max(budget.amount - currentSpent, 0),
+                    remaining: Math.max(proportionalBudget - currentSpent, 0),
                     status,
-                    dateStatus
+                    dateStatus,
+                    proportionalBudget,
+                    queryStartDate: spendingStartDate,
+                    queryEndDate: spendingEndDate
                 };
             })
         );
@@ -242,7 +293,7 @@ exports.deleteBudget = async (req, res) => {
 };
 
 /* =============================
-   GET BUDGET STATS
+   GET BUDGET STATS WITH DATE RANGE SUPPORT
 ============================= */
 exports.getBudgetStats = async (req, res) => {
     try {
@@ -252,17 +303,82 @@ exports.getBudgetStats = async (req, res) => {
 
         const userId = new mongoose.Types.ObjectId(req.user._id);
 
-        // Get all active budgets with spending data
-        const budgets = await Budget.find({ 
+        // Build query object
+        let query = { 
             user: req.user._id, 
             isActive: true 
-        }).populate('category', 'name color icon');
+        };
+
+        // Check for date range query parameters
+        const { startDate, endDate } = req.query;
+        
+        // If date range is provided, filter budgets that overlap with the date range
+        if (startDate && endDate) {
+            const queryStartDate = new Date(startDate);
+            const queryEndDate = new Date(endDate);
+            
+            // Find budgets that overlap with the query date range
+            query.$and = [
+                { startDate: { $lte: queryEndDate } },
+                { endDate: { $gte: queryStartDate } }
+            ];
+        }
+
+        // Get budgets with spending data
+        const budgets = await Budget.find(query)
+            .populate('category', 'name color icon');
 
         const budgetStats = await Promise.all(
             budgets.map(async (budget) => {
-                const currentSpent = await calculateBudgetSpending(budget);
-                const percentage = (currentSpent / budget.amount) * 100;
-                const remaining = Math.max(budget.amount - currentSpent, 0);
+                // For budget spending calculation, we need to consider:
+                // 1. If query date range is provided, calculate spending only within that range
+                // 2. Otherwise, calculate spending within the budget's own date range
+                
+                let spendingStartDate = new Date(budget.startDate);
+                let spendingEndDate = new Date(budget.endDate);
+                
+                if (startDate && endDate) {
+                    // Use the later of budget start date and query start date
+                    spendingStartDate = new Date(Math.max(
+                        new Date(budget.startDate).getTime(),
+                        new Date(startDate).getTime()
+                    ));
+                    
+                    // Use the earlier of budget end date and query end date
+                    spendingEndDate = new Date(Math.min(
+                        new Date(budget.endDate).getTime(),
+                        new Date(endDate).getTime()
+                    ));
+                }
+
+                const currentSpent = await Expense.aggregate([
+                    {
+                        $match: {
+                            user: userId,
+                            category: budget.category._id,
+                            date: {
+                                $gte: spendingStartDate,
+                                $lte: spendingEndDate
+                            }
+                        }
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            total: { $sum: '$amount' }
+                        }
+                    }
+                ]);
+
+                const spentAmount = currentSpent.length > 0 ? currentSpent[0].total : 0;
+                
+                // Calculate the proportional budget amount for the date range
+                const budgetTotalDays = (new Date(budget.endDate) - new Date(budget.startDate)) / (1000 * 60 * 60 * 24) + 1;
+                const queryDays = (spendingEndDate - spendingStartDate) / (1000 * 60 * 60 * 24) + 1;
+                const proportionalBudget = (budget.amount * queryDays) / budgetTotalDays;
+                
+                const percentage = proportionalBudget > 0 ? (spentAmount / proportionalBudget) * 100 : 0;
+                const remaining = Math.max(proportionalBudget - spentAmount, 0);
                 
                 // Calculate budget status
                 let status = 'on_track';
@@ -276,34 +392,40 @@ exports.getBudgetStats = async (req, res) => {
 
                 return {
                     ...budget.toObject(),
-                    currentSpent,
+                    currentSpent: spentAmount,
                     percentage: Math.min(percentage, 100),
                     remaining,
-                    status
+                    status,
+                    proportionalBudget,
+                    queryStartDate: spendingStartDate,
+                    queryEndDate: spendingEndDate
                 };
             })
         );
 
+        // Filter out budgets with zero proportional budget (outside date range)
+        const validBudgets = budgetStats.filter(budget => budget.proportionalBudget > 0);
+
         // Overall stats
-        const totalBudget = budgets.reduce((sum, budget) => sum + budget.amount, 0);
-        const totalSpent = budgetStats.reduce((sum, stat) => sum + stat.currentSpent, 0);
+        const totalBudget = validBudgets.reduce((sum, budget) => sum + budget.proportionalBudget, 0);
+        const totalSpent = validBudgets.reduce((sum, stat) => sum + stat.currentSpent, 0);
         const totalRemaining = Math.max(totalBudget - totalSpent, 0);
         const overallPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
         
         // Count budgets by status
-        const onTrackBudgets = budgetStats.filter(stat => stat.status === 'on_track').length;
-        const almostExceededBudgets = budgetStats.filter(stat => stat.status === 'almost_exceeded').length;
-        const limitReachedBudgets = budgetStats.filter(stat => stat.status === 'limit_reached').length;
-        const exceededBudgets = budgetStats.filter(stat => stat.status === 'exceeded').length;
+        const onTrackBudgets = validBudgets.filter(stat => stat.status === 'on_track').length;
+        const almostExceededBudgets = validBudgets.filter(stat => stat.status === 'almost_exceeded').length;
+        const limitReachedBudgets = validBudgets.filter(stat => stat.status === 'limit_reached').length;
+        const exceededBudgets = validBudgets.filter(stat => stat.status === 'exceeded').length;
 
         res.json({
-            budgetStats,
+            budgetStats: validBudgets,
             overallStats: {
                 totalBudget,
                 totalSpent,
                 totalRemaining,
                 overallPercentage: Math.min(overallPercentage, 100),
-                activeBudgets: budgets.length,
+                activeBudgets: validBudgets.length,
                 onTrackBudgets,
                 almostExceededBudgets,
                 limitReachedBudgets,
@@ -459,17 +581,27 @@ exports.markAlertAsRead = async (req, res) => {
 };
 
 /* =============================
-   HELPER: Calculate Budget Spending
+   HELPER: Calculate Budget Spending with Optional Date Range
 ============================= */
-async function calculateBudgetSpending(budget) {
-    const expenses = await Expense.find({
+async function calculateBudgetSpending(budget, startDate = null, endDate = null) {
+    const matchCriteria = {
         user: budget.user,
-        category: budget.category,
-        date: {
+        category: budget.category
+    };
+
+    // Use provided date range or budget's date range
+    if (startDate && endDate) {
+        matchCriteria.date = {
+            $gte: new Date(startDate),
+            $lte: new Date(endDate)
+        };
+    } else {
+        matchCriteria.date = {
             $gte: new Date(budget.startDate),
             $lte: new Date(budget.endDate)
-        }
-    });
+        };
+    }
 
+    const expenses = await Expense.find(matchCriteria);
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
 }
